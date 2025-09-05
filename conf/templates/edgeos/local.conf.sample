@@ -212,7 +212,7 @@ BB_DISKMON_DIRS ??= "\
 # By default native qemu will build with a builtin VNC server where graphical output can be
 # seen. The line below enables the SDL UI frontend too.
 PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
-# By default libsdl2-native will be built, if you want to use your host's libSDL instead of 
+# By default libsdl2-native will be built, if you want to use your host's libSDL instead of
 # the minimal libsdl built by libsdl2-native then uncomment the ASSUME_PROVIDED line below.
 #ASSUME_PROVIDED += "libsdl2-native"
 
@@ -248,3 +248,21 @@ PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
 # track the version of this file when it was generated. This can safely be ignored if
 # this doesn't mean anything to you.
 CONF_VERSION = "2"
+
+
+MACHINE = "jetson-orin-nano-devkit"
+DISTRO = "edgeos"
+
+DL_DIR = "${TOPDIR}/../downloads"
+SSTATE_DIR = "${TOPDIR}/../sstate-cache"
+
+TMPDIR = "${TOPDIR}/tmp"
+
+EDGEOS_DEBUG = "0"
+EDGEOS_DEBUG_UART = "0"
+EDGEOS_USB_GADGET = "0"
+
+# By default, journal log is saved on volatile storage.
+# If the persistent approach is needed, a dedicated partition
+# should be used so that it doesn't impact the root filesystem.
+EDGEOS_PERSIST_JOURNAL_LOGS = "0"
