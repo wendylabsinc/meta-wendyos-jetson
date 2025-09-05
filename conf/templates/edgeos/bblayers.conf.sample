@@ -1,0 +1,21 @@
+# Version of layers configuration, specific to
+# each defined distro in the repository.
+# Format: ${DISTRO}-<version>
+TD_BBLAYERS_CONF_VERSION = "edgeos-5"
+
+BBPATH = "${TOPDIR}"
+BBFILES ?= ""
+
+BBLAYERS ?= " \
+  ##OEROOT##/meta \
+  ##OEROOT##/meta-tegra \
+  ##OEROOT##/meta-oe \
+  ##OEROOT##/meta-python \
+  ##OEROOT##/meta-networking \
+  ##OEROOT##/meta-filesystems \
+  ##OEROOT##/meta-virtualization \
+  ##OEROOT##/meta-tegra-community \
+  ##OEROOT##/meta-tegra-support \
+  ##OEROOT##/meta-demo-ci \
+  ##OEROOT##/meta-edgeos \
+  "

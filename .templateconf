@@ -1,0 +1,1 @@
+TEMPLATECONF=${TEMPLATECONF:-meta-edgeos/conf/templates/$DISTRO}
