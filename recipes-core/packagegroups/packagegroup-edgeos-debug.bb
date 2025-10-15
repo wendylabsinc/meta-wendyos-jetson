@@ -14,9 +14,7 @@ RDEPENDS:${PN} = " \
             memtester \
             gperftools \
             bash \
-            file \
             rt-tests \
-            htop \
             nfs-utils \
             procps \
             sysstat \

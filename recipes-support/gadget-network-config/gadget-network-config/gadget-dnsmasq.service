@@ -1,0 +1,12 @@
+[Unit]
+Description=DHCP for USB gadget (dnsmasq on usb0)
+After=gadget-setup.service
+Wants=gadget-setup.service
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/dnsmasq --conf-file=/etc/dnsmasq.d/usb-gadget-dnsmasq.conf -k
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

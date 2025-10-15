@@ -1,25 +1,39 @@
-DESCRIPTION = "Edge Image with WIC support"
+
+DESCRIPTION = "edgeOS Image"
 LICENSE = "MIT"
 
-# require recipes-demo/images/core-image-base.bb
-# require recipes-demo/images/core-image-minimal.bb
-# require core-image-minimal.bb
-require recipes-core/images/core-image-minimal.bb
+inherit core-image
+
+DISTRO_FEATURES:append = " systemd"
+VIRTUAL-RUNTIME_init_manager = "systemd"
 
 IMAGE_FEATURES += " \
     ssh-server-openssh \
-    package-management \
     "
 
-IMAGE_INSTALL += " \
+IMAGE_INSTALL:append = " \
     packagegroup-edgeos-base \
+    packagegroup-edgeos-kernel \
     packagegroup-edgeos-debug \
     "
 
-# IMAGE_INSTALL:append = " \
-#     htop \
-#     ethtool \
-#     "
+# Enable USB peripheral (gadget) support
+IMAGE_INSTALL += " \
+    ${@oe.utils.ifelse( \
+        d.getVar('EDGEOS_USB_GADGET') == '1', \
+            ' \
+                gadget-setup \
+                gadget-network-config \
+                usb-gadget-modules \
+                e2fsprogs-mke2fs \
+                util-linux-mount \
+            ', \
+            '' \
+        )} \
+    "
+
+IMAGE_ROOTFS_SIZE ?= "8192"
+IMAGE_ROOTFS_EXTRA_SPACE:append = "${@bb.utils.contains("DISTRO_FEATURES", "systemd", " + 4096", "", d)}"
 
 # A space-separated list of variable names that BitBake prints in the
 # “Build Configuration” banner at the start of a build.
