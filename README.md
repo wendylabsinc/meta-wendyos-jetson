@@ -1,24 +1,39 @@
 
-1. Clone the tegra-demo-distro repository:
-$ git clone https://github.com/OE4T/tegra-demo-distro.git
+# EdgeOS for NVIDIA Jetson Nano Developer Kit
 
-2. Switch to the appropriate branch:
-$ cd tegra-demo-distro
-$ git checkout scarthgap
+This repository provides the meta-layer and build flow to build **EdgeOS** for the **NVIDIA Jetson Nano Developer Kit**.
 
-3. Initialize the git submodules:
-$ git submodule update --init
+## Quick Start
 
-4. Clone the edgeos repository:
-$ cd ./layers
-$ git clone git@github.com:mihai-chiorean/meta-edgeos-jetson.git
+### Steps to build NVIDIA Jetson Nano Dev Kit
 
-5. Source the setup-env script to create a build directory, specifying the MACHINE:
-$ cd ..
-$ . ./setup-env --machine jetson-orin-nano-devkit
+1. Clone the edgeOS meta layer (preferably in an empty folder)
+```bash
+$ git clone git@github.com:mihai-chiorean/meta-edgeos-jetson.git meta-edgeos
+```
 
-6. Copy and modify the 'bblayers.conf.sample' and 'local.conf.sample' from
-'meta-edgeos/conf/templates/edgeos' into the 'build/conf' directory.
+2. Setup the build environment
+```bash
+$ ./meta-edgeos/bootstrap.sh
+```
 
-6. Build the image:
-$ bitbake edgeos-image
+Follow the instructions showed by the bootstrap script to build the image.
+
+**Notes**
+- The bootstrap script initializes the Yocto environment, sets up layers, and prints the exact building command to be used.
+- Ensure you have a reliable internet connection and plenty of disk space before starting a build.
+
+### Flash the SD card
+
+Change directory to project root (where the `repos`, `layers` and `build` folder are located).
+
+The image to be flashed: `edgeos-image-jetson-orin-nano-devkit.rootfs.tegraflash.tar.gz` (or something similar)
+The SD card device: `/dev/sdX`
+
+```bash
+$ cd <root folder>
+$ mkdir ./deploy
+$ tar -xzf ./build/images/jetson-orin-nano-devkit/<image> -C ./deploy
+$ cd ./deploy
+$ sudo ./dosdcard.sh /dev/sdX
+```
