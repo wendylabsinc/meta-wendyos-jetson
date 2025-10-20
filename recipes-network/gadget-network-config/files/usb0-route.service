@@ -1,0 +1,12 @@
+
+[Unit]
+Description=Set default route via USB host (from dnsmasq leases)
+After=network-online.target gadget-dnsmasq.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=LEASE_FILE=/var/lib/misc/dnsmasq.leases
+Environment=DEV=usb0
+ExecStart=/usr/bin/usb0-route-from-leases.sh
+

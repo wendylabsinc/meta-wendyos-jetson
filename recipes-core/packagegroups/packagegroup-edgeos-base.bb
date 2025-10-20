@@ -13,9 +13,11 @@ RDEPENDS:${PN} = " \
     file \
     util-linux \
     iproute2 \
+    iproute2-ss \
     vim \
     htop \
     usbutils \
+    awk \
     "
 
 RDEPENDS:${PN}:append = " \

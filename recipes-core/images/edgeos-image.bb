@@ -23,10 +23,13 @@ IMAGE_INSTALL += " \
         d.getVar('EDGEOS_USB_GADGET') == '1', \
             ' \
                 gadget-setup \
+                gadget-network \
                 gadget-network-config \
+                gadget-dnsmasq \
                 usb-gadget-modules \
                 e2fsprogs-mke2fs \
                 util-linux-mount \
+                awk \
             ', \
             '' \
         )} \

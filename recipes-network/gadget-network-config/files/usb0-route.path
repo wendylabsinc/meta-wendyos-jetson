@@ -1,0 +1,11 @@
+
+[Unit]
+Description=Watch dnsmasq leases and update USB default route
+
+[Path]
+PathChanged=/var/lib/misc/dnsmasq.leases
+Unit=usb0-route.service
+
+[Install]
+WantedBy=multi-user.target
+
