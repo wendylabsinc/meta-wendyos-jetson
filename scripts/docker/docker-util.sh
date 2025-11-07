@@ -85,10 +85,10 @@ declare -A opts=(
     [remove]=0
 )
 
+OS_NAME="wendyos"
 DOCKER_BASE="${DOCKER_BASE:-ubuntu:24.04}"
 DOCKER_NAME=""
-# DOCKER_REPO="edgeos"
-DOCKER_REPO="${DOCKER_REPO:-edgeos-test}"
+DOCKER_REPO="${DOCKER_REPO:-${OS_NAME}-build}"
 # DOCKER_TAG="latest"
 DOCKER_TAG="${DOCKER_TAG:-scarthgap}"
 DOCKER_CONFIG=""
@@ -134,6 +134,23 @@ Run an image:
   $(basename $0) run
 
 EOF
+}
+
+# Returns 0 (true) if the specific repo:tag image exists locally, else 1 (false).
+docker_image_exists() {
+    local repo="$1"
+    local tag="$2"
+
+    # require both args
+    if [[ -z "$repo" || -z "$tag" ]]; then
+        return 2
+    fi
+
+    if [ -n "$(docker image ls -q --filter "reference=${repo}:${tag}")" ]; then
+        return 0
+    fi
+
+    return 1
 }
 
 ### main
@@ -246,6 +263,12 @@ done
 
 if [[ 1 -eq "${opts[create]}" ]]
 then
+    if docker_image_exists "${DOCKER_REPO}" "${DOCKER_TAG}"
+    then
+        printf "Docker image already exists (%s:%s)\n" "${DOCKER_REPO}" "${DOCKER_TAG}"
+        exit 0
+    fi
+
     DOCKER_CONFIG="${WORK_DIR}/dockerfile"
 
     [ ! -f "${DOCKER_CONFIG}" ] && {
