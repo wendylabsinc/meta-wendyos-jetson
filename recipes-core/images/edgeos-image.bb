@@ -3,18 +3,47 @@ DESCRIPTION = "edgeOS Image"
 LICENSE = "MIT"
 
 inherit core-image
+inherit mender-full
 
 DISTRO_FEATURES:append = " systemd"
 VIRTUAL-RUNTIME_init_manager = "systemd"
 
+# Make this image also produce an ext4 alongside tegraflash/mender/dataimg
+IMAGE_FSTYPES += " ext4"
+
+# Release-style naming for this image:
+# - IMAGE_VERSION_SUFFIX is a common pattern to carry a release tag.
+# - If unset, it falls back to DISTRO_VERSION.
+IMAGE_VERSION_SUFFIX ?= "${DISTRO_VERSION}"
+
+# Keep names reproducible for releases.
+# (Avoid DATETIME here unless you WANT a new artifact for every rebuild.)
+MENDER_ARTIFACT_NAME = "${IMAGE_BASENAME}-${MACHINE}-${IMAGE_VERSION_SUFFIX}"
+# MENDER_ARTIFACT_NAME = "${IMAGE_BASENAME}-${DISTRO_VERSION}-${DATETIME}"
+
+MENDER_UPDATE_POLL_INTERVAL_SECONDS    = "1800"
+MENDER_INVENTORY_POLL_INTERVAL_SECONDS = "28800"
+MENDER_RETRY_POLL_INTERVAL_SECONDS     = "300"
+MENDER_SYSTEMD_AUTO_ENABLE = "1"
+
+MENDER_CONNECT_ENABLE = "1"
+
+# Apply our UEFI boot-priority overlay during flash
+TEGRA_BOOTCONTROL_OVERLAYS += "boot-priority.dtbo"
+
 IMAGE_FEATURES += " \
     ssh-server-openssh \
+    debug-tweaks \
     "
 
 IMAGE_INSTALL:append = " \
     packagegroup-edgeos-base \
     packagegroup-edgeos-kernel \
     packagegroup-edgeos-debug \
+    mender-esp \
+    mender-configure \
+    mender-connect \
+    tegra-bootcontrol-overlay \
     "
 
 # Enable USB peripheral (gadget) support

@@ -1,0 +1,3 @@
+
+UBOOT_EXTLINUX_FDT = "tegra234-p3768-0000+p3767-0005-nv-super.dtb"
+

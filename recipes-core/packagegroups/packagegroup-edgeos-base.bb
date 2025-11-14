@@ -8,6 +8,7 @@ SUMMARY:${PN} = "Base support"
 RDEPENDS:${PN} = " \
     packagegroup-core-boot \
     bash \
+    efibootmgr \
     coreutils \
     libstdc++ \
     file \
@@ -16,6 +17,7 @@ RDEPENDS:${PN} = " \
     vim \
     htop \
     usbutils \
+    tree \
     "
 
 RDEPENDS:${PN}:append = " \
