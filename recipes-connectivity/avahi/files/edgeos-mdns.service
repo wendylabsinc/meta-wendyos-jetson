@@ -1,0 +1,52 @@
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <name replace-wildcards="yes">EdgeOS on %h</name>
+  
+  <!-- SSH Service -->
+  <service>
+    <type>_ssh._tcp</type>
+    <port>22</port>
+    <txt-record>model=EdgeOS</txt-record>
+    <txt-record>platform=Raspberry Pi</txt-record>
+  </service>
+  
+  <!-- Device Info Service -->
+  <service>
+    <type>_device-info._tcp</type>
+    <port>0</port>
+    <txt-record>model=EdgeOS Device</txt-record>
+    <txt-record>version=1.0</txt-record>
+  </service>
+  
+  <!-- HTTP Service (if running) -->
+  <service>
+    <type>_http._tcp</type>
+    <port>80</port>
+    <txt-record>path=/</txt-record>
+    <txt-record>platform=EdgeOS</txt-record>
+  </service>
+  
+  <!-- HTTPS Service (if running) -->
+  <service>
+    <type>_https._tcp</type>
+    <port>443</port>
+    <txt-record>path=/</txt-record>
+    <txt-record>platform=EdgeOS</txt-record>
+  </service>
+  
+  <!-- EdgeOS Agent Service -->
+  <service>
+    <type>_edge-agent._tcp</type>
+    <port>8080</port>
+    <txt-record>version=1.0</txt-record>
+    <txt-record>api=/api/v1</txt-record>
+  </service>
+
+  <!-- EdgeOS Device Service -->
+  <service>
+    <type>_edgeos._udp</type>
+    <port>50051</port>
+    <txt-record>edgeosdevice=SOME_DEVICE_ID</txt-record>
+  </service>
+</service-group>
