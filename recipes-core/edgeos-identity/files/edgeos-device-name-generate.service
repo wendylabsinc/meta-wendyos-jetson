@@ -1,0 +1,15 @@
+[Unit]
+Description=EdgeOS Device Name Generation
+DefaultDependencies=no
+After=local-fs.target edgeos-uuid-generate.service
+Before=edgeos-identity.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/generate-device-name.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target
