@@ -58,6 +58,12 @@ Current repository URL:
    - `MACHINE` - Target machine configuration:
      - `jetson-orin-nano-devkit-edgeos` (eMMC/SD card boot)
      - `jetson-orin-nano-devkit-nvme-edgeos` (NVMe boot)
+   - `EDGEOS_FLASH_IMAGE_SIZE` - Flash image size (default: "64GB"):
+     - `"4GB"` - 3.2GB Mender storage (~1.3GB per rootfs partition)
+     - `"8GB"` - 6.4GB Mender storage (~2.9GB per rootfs partition)
+     - `"16GB"` - 12.8GB Mender storage (~6GB per rootfs partition)
+     - `"32GB"` - 25.7GB Mender storage (~12GB per rootfs partition)
+     - `"64GB"` - 51GB Mender storage (~25GB per rootfs partition)
 
 4. **Build the image**
 
@@ -74,7 +80,7 @@ Current repository URL:
    bitbake edgeos-image
    ```
 
-   Depending on the hardware configuration, the build process can take several hours on the first run.
+   Depending on the hardware configuration, the build process can take several hours on the first run (when the `download` and `sstate-cache` folders are empty!).
 
 ### Flash the SD Card or NVMe
 
@@ -83,14 +89,18 @@ The build produces a flash package at:
 build/tmp/deploy/images/<machine>/edgeos-image-<machine>.rootfs.tegraflash.tar.gz
 ```
 
-There are two ways to flash, both using the `dosdcard.sh` script provided by meta-tegra:
+**Important**: The flashing script differs based on your target machine:
+- **eMMC/SD card** (`jetson-orin-nano-devkit-edgeos`) → use `dosdcard.sh`
+- **NVMe** (`jetson-orin-nano-devkit-nvme-edgeos`) → use `doexternal.sh`
 
-#### Option 1: Directly Flash to SD Card
+#### For eMMC/SD Card Builds
+
+**Option 1: Directly Flash to SD Card**
 
 ```bash
 cd /path/to/project
 mkdir ./deploy
-tar -xzf ./build/tmp/deploy/images/<machine>/edgeos-image-*.tegraflash.tar.gz -C ./deploy
+tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-edgeos/edgeos-image-*.tegraflash.tar.gz -C ./deploy
 cd ./deploy
 sudo ./dosdcard.sh /dev/sdX
 ```
@@ -99,26 +109,68 @@ Replace `/dev/sdX` with the actual SD card device (e.g., `/dev/sdb`).
 
 **Warning**: This will erase all data on the device!
 
-#### Option 2: Create a Flashable .img File
+**Option 2: Create a Flashable .img File**
 
 ```bash
 cd /path/to/project
 mkdir ./deploy
-tar -xzf ./build/tmp/deploy/images/<machine>/edgeos-image-*.tegraflash.tar.gz -C ./deploy
+tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-edgeos/edgeos-image-*.tegraflash.tar.gz -C ./deploy
 cd ./deploy
-sudo ./dosdcard.sh wendyos
+sudo ./dosdcard.sh wendyos.img
 ```
 
-This creates `wendyos.img`, which you can flash using:
+This creates `wendyos.img`, which you can flash using dd or GUI tools (see below).
 
-**Command line:**
+#### For NVMe Builds
+
+**Option 1: Directly Flash to NVMe**
+
 ```bash
-sudo dd if=wendyos.img of=/dev/sdX bs=4M status=progress conv=fsync
+cd /path/to/project
+mkdir ./deploy
+tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-nvme-edgeos/edgeos-image-*.tegraflash.tar.gz -C ./deploy
+cd ./deploy
+sudo ./doexternal.sh /dev/nvme0n1
+```
+
+Replace `/dev/nvme0n1` with your actual NVMe device path.
+
+**Warning**: This will erase all data on the device!
+
+**Option 2: Create a Flashable .img File**
+
+```bash
+cd /path/to/project
+mkdir ./deploy
+tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-nvme-edgeos/edgeos-image-*.tegraflash.tar.gz -C ./deploy
+cd ./deploy
+sudo ./doexternal.sh -s 64G wendyos-nvme.img
+```
+
+**Important**: You must specify the size with `-s` parameter. The size should match your `EDGEOS_FLASH_IMAGE_SIZE` setting:
+- `-s 4G` for 4GB images
+- `-s 8G` for 8GB images
+- `-s 16G` for 16GB images
+- `-s 32G` for 32GB images
+- `-s 64G` for 64GB images
+
+This creates `wendyos-nvme.img`, which you can flash using dd or GUI tools (see below).
+
+#### Flashing the .img File
+
+**Command line (works for both SD card and NVMe):**
+```bash
+# For SD card
+sudo dd if=wendyos.img of=/dev/sdX bs=4M status=progress oflag=sync conv=fsync
+
+# For NVMe
+sudo dd if=wendyos-nvme.img of=/dev/nvme0n1 bs=4M status=progress oflag=sync conv=fsync
+
 sync
 ```
 
 **GUI tools:**
-- balenaEtcher
+- balenaEtcher (recommended)
 - Raspberry Pi Imager
 - GNOME Disks
 
@@ -256,10 +308,13 @@ You can modify these variables in `bootstrap.sh` before running:
 ### Build Configuration Variables
 
 In `build/conf/local.conf`:
+- `EDGEOS_FLASH_IMAGE_SIZE` - Flash image size: "4GB", "8GB", "16GB", "32GB", "64GB" (default: "8GB")
 - `EDGEOS_DEBUG` - Enable debug packages (default: 0)
 - `EDGEOS_DEBUG_UART` - Enable UART debug output (default: 0)
 - `EDGEOS_USB_GADGET` - Enable USB gadget mode (default: 0)
 - `EDGEOS_PERSIST_JOURNAL_LOGS` - Persist logs to storage (default: 0)
+
+**Note**: Choose `EDGEOS_FLASH_IMAGE_SIZE` based on your target storage device capacity and expected rootfs size. Larger images provide more space for root filesystems and future updates.
 
 ## Architecture Notes
 

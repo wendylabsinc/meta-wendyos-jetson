@@ -72,6 +72,7 @@ declare -Ar repos=(
     [0]="1|git://git.yoctoproject.org/poky.git||${YOCTO_BRANCH}"
     [1]="1|https://github.com/openembedded/meta-openembedded.git||${YOCTO_BRANCH}"
     [2]="1|https://github.com/OE4T/meta-tegra.git||${YOCTO_BRANCH}"
+    [4]="1|git://git.yoctoproject.org/meta-virtualization.git||${YOCTO_BRANCH}"
     [3]="1|https://github.com/OE4T/meta-tegra-community||${YOCTO_BRANCH}"
     [5]="1|https://github.com/mendersoftware/meta-mender.git||${YOCTO_BRANCH}"
     [6]="1|https://github.com/mendersoftware/meta-mender-community.git||${YOCTO_BRANCH}"
@@ -251,17 +252,19 @@ then
     cp "${META_LAYER_DIR}/conf/template/bblayers.conf" "./${YOCTO_BUILD_DIR}/conf"
     cp "${META_LAYER_DIR}/conf/template/local.conf" "./${YOCTO_BUILD_DIR}/conf"
 
-    tmp="${DOCKER_WORK_DIR}/repos"
-    sed -i.bak "s|%PATH%|${tmp}|g" "./${YOCTO_BUILD_DIR}/conf/bblayers.conf"
+    # tmp="${DOCKER_WORK_DIR}/repos"
+    # sed -i.bak "s|%PATH%|${tmp}|g" "./${YOCTO_BUILD_DIR}/conf/bblayers.conf"
 
-    tmp="${DOCKER_WORK_DIR}/${image_name}"
-    sed -i.bak "s|%PATH_META%|${tmp}|g" "./${YOCTO_BUILD_DIR}/conf/bblayers.conf"
+    # tmp="${DOCKER_WORK_DIR}/${image_name}"
+    # sed -i.bak "s|%PATH_META%|${tmp}|g" "./${YOCTO_BUILD_DIR}/conf/bblayers.conf"
+
+    sed -i.bak "s|%META-REPO%|${image_name}|g" "./${YOCTO_BUILD_DIR}/conf/bblayers.conf"
 else
     printf "Yocto build directory already exists!\n"
 fi
 
 printf "\nDirectory structure:\n"
-tree -d -L 2 || true #--charset=ascii
+tree -d -L 2 -I 'build|downloads|sstate-cache' || true #--charset=ascii
 
 # prepare Docker image
 printf "\nCreate docker image...\n"

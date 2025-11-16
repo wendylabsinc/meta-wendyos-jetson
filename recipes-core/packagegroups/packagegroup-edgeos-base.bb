@@ -18,6 +18,11 @@ RDEPENDS:${PN} = " \
     htop \
     usbutils \
     tree \
+    avahi-daemon \
+    avahi-utils \
+    edgeos-identity \
+    edgeos-agent \
+    edgeos-user \
     "
 
 RDEPENDS:${PN}:append = " \
