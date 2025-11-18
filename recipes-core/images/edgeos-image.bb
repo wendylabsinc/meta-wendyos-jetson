@@ -44,6 +44,9 @@ IMAGE_INSTALL:append = " \
     mender-configure \
     mender-connect \
     tegra-bootcontrol-overlay \
+    packagegroup-nvidia-container \
+    nvidia-container-config \
+    python3-pip-jetson-config \
     "
 
 # Enable USB peripheral (gadget) support
