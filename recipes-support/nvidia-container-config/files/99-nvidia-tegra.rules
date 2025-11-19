@@ -1,0 +1,26 @@
+# NVIDIA Tegra device permissions for container access
+# Make NVIDIA GPU devices accessible to video group with rw permissions
+
+# NVIDIA GPU control devices
+KERNEL=="nvidia*", MODE="0666"
+KERNEL=="nvidiactl", MODE="0666"
+
+# Tegra memory manager
+KERNEL=="nvmap", MODE="0666"
+
+# Tegra Host1x devices
+KERNEL=="nvhost-*", MODE="0666"
+
+# NVIDIA GPU devices (newer interface)
+SUBSYSTEM=="nvgpu", MODE="0666"
+
+# Video decode/encode
+KERNEL=="v4l2-nvdec", MODE="0666"
+KERNEL=="v4l2-nvenc", MODE="0666"
+
+# DRI devices (should already be accessible, but just in case)
+KERNEL=="card[0-9]*", MODE="0666"
+KERNEL=="renderD[0-9]*", MODE="0666"
+
+# NvSciIPC
+KERNEL=="nvsciipc", MODE="0666"

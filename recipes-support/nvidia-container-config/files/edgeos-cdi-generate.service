@@ -1,0 +1,23 @@
+[Unit]
+Description=EdgeOS CDI Spec Generation for NVIDIA GPUs
+After=local-fs.target systemd-udev-settle.service
+Before=containerd.service docker.service
+# Only run if nvidia-cdi-refresh.service doesn't exist (fallback)
+ConditionPathExists=!/lib/systemd/system/nvidia-cdi-refresh.service
+# Ensure l4t.csv exists before running
+ConditionPathExists=/etc/nvidia-container-runtime/host-files-for-container.d/l4t.csv
+
+[Service]
+Type=oneshot
+# Wait a bit for device nodes to appear
+ExecStartPre=/bin/sleep 2
+# Create directory if needed
+ExecStartPre=/bin/mkdir -p /etc/cdi
+# Generate CDI spec using CSV mode (reads l4t.csv, devices.csv, drivers.csv)
+# This runs on every boot to ensure CDI spec is up-to-date with current CSV files
+ExecStart=/usr/bin/nvidia-ctk cdi generate --mode=csv --output=/etc/cdi/nvidia.yaml
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

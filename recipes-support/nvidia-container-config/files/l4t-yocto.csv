@@ -1,0 +1,60 @@
+# Device nodes (required for GPU access)
+dev, /dev/nvidiactl
+dev, /dev/nvidia0
+dev, /dev/nvmap
+dev, /dev/nvhost-gpu
+dev, /dev/nvhost-ctrl-gpu
+dev, /dev/nvhost-as-gpu
+dev, /dev/nvhost-dbg-gpu
+dev, /dev/nvhost-prof-gpu
+dev, /dev/nvhost-ctxsw-gpu
+dev, /dev/nvhost-sched-gpu
+dev, /dev/nvhost-tsg-gpu
+dev, /dev/nvhost-vic
+
+# CUDA Runtime (in /usr/local/cuda-12.6/lib - same as standard L4T!)
+lib, /usr/local/cuda-12.6/lib/libcudart.so.12
+lib, /usr/local/cuda-12.6/lib/libcudart.so.12.6.68
+sym, /usr/local/cuda-12.6/lib/libcudart.so
+
+# cuDNN (in /usr/lib - different from L4T which uses /usr/lib/aarch64-linux-gnu)
+lib, /usr/lib/libcudnn.so.9
+lib, /usr/lib/libcudnn.so.9.3.0
+sym, /usr/lib/libcudnn.so
+lib, /usr/lib/libcudnn_ops.so.9
+lib, /usr/lib/libcudnn_ops.so.9.3.0
+sym, /usr/lib/libcudnn_ops.so
+lib, /usr/lib/libcudnn_cnn.so.9
+lib, /usr/lib/libcudnn_cnn.so.9.3.0
+sym, /usr/lib/libcudnn_cnn.so
+lib, /usr/lib/libcudnn_adv.so.9
+lib, /usr/lib/libcudnn_adv.so.9.3.0
+sym, /usr/lib/libcudnn_adv.so
+lib, /usr/lib/libcudnn_graph.so.9
+lib, /usr/lib/libcudnn_graph.so.9.3.0
+sym, /usr/lib/libcudnn_graph.so
+lib, /usr/lib/libcudnn_engines_runtime_compiled.so.9
+lib, /usr/lib/libcudnn_engines_runtime_compiled.so.9.3.0
+sym, /usr/lib/libcudnn_engines_runtime_compiled.so
+lib, /usr/lib/libcudnn_engines_precompiled.so.9
+lib, /usr/lib/libcudnn_engines_precompiled.so.9.3.0
+sym, /usr/lib/libcudnn_engines_precompiled.so
+lib, /usr/lib/libcudnn_heuristic.so.9
+lib, /usr/lib/libcudnn_heuristic.so.9.3.0
+sym, /usr/lib/libcudnn_heuristic.so
+
+# TensorRT (in /usr/lib - different from L4T which uses /usr/lib/aarch64-linux-gnu)
+lib, /usr/lib/libnvinfer.so.10
+lib, /usr/lib/libnvinfer.so.10.3.0
+sym, /usr/lib/libnvinfer.so
+lib, /usr/lib/libnvinfer_plugin.so.10
+lib, /usr/lib/libnvinfer_plugin.so.10.3.0
+sym, /usr/lib/libnvinfer_plugin.so
+lib, /usr/lib/libnvonnxparser.so.10
+lib, /usr/lib/libnvonnxparser.so.10.3.0
+sym, /usr/lib/libnvonnxparser.so
+
+# Tegra CUDA driver (in /usr/lib)
+lib, /usr/lib/libcuda.so.1.1
+sym, /usr/lib/libcuda.so
+sym, /usr/lib/libcuda.so.1
