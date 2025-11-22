@@ -46,6 +46,8 @@ IMAGE_INSTALL:append = " \
     tegra-bootcontrol-overlay \
     packagegroup-nvidia-container \
     nvidia-container-config \
+    wendyos-containerd-registry \
+    wendyos-dev-registry-image \
     python3-pip-jetson-config \
     "
 

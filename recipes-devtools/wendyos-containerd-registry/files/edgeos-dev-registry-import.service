@@ -1,0 +1,25 @@
+[Unit]
+Description=EdgeOS Dev Registry Image Import (First Boot)
+Documentation=https://github.com/mihai-chiorean/containerd-registry
+After=containerd.service
+Requires=containerd.service
+# Only run if the registry image doesn't exist yet
+ConditionPathExists=!/var/lib/edgeos/dev-registry-imported
+# And only if the archive exists
+ConditionPathExists=/usr/share/edgeos/offline-images/containerd-registry-arm64.tar
+
+[Service]
+Type=oneshot
+# Import the registry image into containerd's default namespace
+ExecStartPre=/bin/mkdir -p /var/lib/edgeos
+ExecStart=/usr/bin/ctr -n default images import /usr/share/edgeos/offline-images/containerd-registry-arm64.tar
+# Mark as imported so we don't run again
+ExecStartPost=/bin/touch /var/lib/edgeos/dev-registry-imported
+# Clean up the archive to save space (optional)
+# ExecStartPost=/bin/rm -f /usr/share/edgeos/offline-images/containerd-registry-arm64.tar
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
