@@ -57,6 +57,7 @@ IMAGE_INSTALL += " \
                 gadget-setup \
                 gadget-network-config \
                 usb-gadget-modules \
+                usb-network-tuning \
                 e2fsprogs-mke2fs \
                 util-linux-mount \
             ', \
