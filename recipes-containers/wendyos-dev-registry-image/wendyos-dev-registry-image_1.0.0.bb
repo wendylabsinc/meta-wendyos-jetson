@@ -7,7 +7,7 @@ PV = "1.0.0"
 
 # Download the container image tar from GitHub releases
 # BitBake will automatically unpack the .tar.gz to get the .tar file
-SRC_URI = "https://github.com/mihai-chiorean/containerd-registry/releases/download/v${PV}/containerd-registry-arm64.tar.gz"
+SRC_URI = "https://github.com/wendylabsinc/containerd-registry/releases/download/v${PV}/containerd-registry-arm64.tar.gz"
 
 # Checksum for v1.0.0 release
 SRC_URI[sha256sum] = "0ea9497b4fd3b6ed3a2b61bae71d27c595c058a72d76621379ef56fe6c8b5073"
