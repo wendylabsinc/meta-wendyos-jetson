@@ -76,6 +76,9 @@ RUN echo '%sudo ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/nopasswd && \
 # Allow 'dev' user to run sudo
 RUN usermod -aG sudo ${USER_NAME}
 
+# Set password for dev user
+RUN echo 'dev:edgeos' | chpasswd
+
 COPY files/.bash_history /home/$USER_NAME
 
 # Customize the '.bashrc' file
