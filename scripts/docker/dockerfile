@@ -27,7 +27,7 @@ RUN apt-get update && \
         gawk wget git-core diffstat unzip texinfo gcc-multilib \
         build-essential chrpath socat cpio python3 python3-pip \
         python3-pexpect xz-utils debianutils iputils-ping python3-git \
-        python3-jinja2 libsdl1.2-dev xterm make \
+        python3-jinja2 python3-yaml libsdl1.2-dev xterm make \
         xsltproc docbook-utils fop dblatex xmlto git-lfs u-boot-tools \
         strace tree \
         lz4 zstd liblz4-tool graphviz \
