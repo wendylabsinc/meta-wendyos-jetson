@@ -69,8 +69,8 @@ RUN set -eux; \
     usermod -s /bin/bash "${USER_NAME}"; \
     mkdir -p "/home/${USER_NAME}" && chown -R "${USER_NAME}:${USER_NAME}" "/home/${USER_NAME}"
 
-# Configure passwordless sudo for the sudo group
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nopasswd && \
+# Configure passwordless sudo for the sudo group (using same format as main sudoers)
+RUN echo '%sudo ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/nopasswd && \
     chmod 0440 /etc/sudoers.d/nopasswd
 
 # Allow 'dev' user to run sudo

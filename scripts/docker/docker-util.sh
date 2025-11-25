@@ -321,7 +321,6 @@ else
         -e "TERM=xterm-256color" \
         -e "LANG=C.UTF-8" \
         -e "DOCKER_TAG=${DOCKER_TAG}" \
-        -u "$(id -u):$(id -g)" \
         --hostname ${DOCKER_HOST} \
         ${DOCKER_ARGS} \
         "${DOCKER_REPO}:${DOCKER_TAG}"
