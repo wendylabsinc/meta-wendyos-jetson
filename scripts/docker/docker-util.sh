@@ -256,8 +256,8 @@ done
 }
 
 [ 1 -eq "${opts[remove]}" ] && {
-    printf "Remove Docker image... (%s)\n" "${DOCKER_REPO}"
-    docker image rm "${DOCKER_REPO}"
+    printf "Remove Docker image... (%s:%s)\n" "${DOCKER_REPO}" "${DOCKER_TAG}"
+    docker image rm "${DOCKER_REPO}:${DOCKER_TAG}"
     exit $?
 }
 
