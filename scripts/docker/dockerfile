@@ -69,10 +69,11 @@ RUN set -eux; \
     usermod -s /bin/bash "${USER_NAME}"; \
     mkdir -p "/home/${USER_NAME}" && chown -R "${USER_NAME}:${USER_NAME}" "/home/${USER_NAME}"
 
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# Configure passwordless sudo for the sudo group
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nopasswd && \
+    chmod 0440 /etc/sudoers.d/nopasswd
 
-# Allow 'dev' user to run sudo (password is "dev")
-# (useful when later on packages need to be installed that are missing)
+# Allow 'dev' user to run sudo
 RUN usermod -aG sudo ${USER_NAME}
 
 COPY files/.bash_history /home/$USER_NAME
