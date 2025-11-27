@@ -22,7 +22,7 @@ SYSTEMD_SERVICE:${PN} = "edgeos-uuid-generate.service edgeos-device-name-generat
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
 do_install() {
-    # Install scripts
+    # Install scripts to /usr/bin
     install -d ${D}${bindir}
     install -m 0755 ${WORKDIR}/generate-uuid.sh ${D}${bindir}/
     install -m 0755 ${WORKDIR}/generate-device-name.sh ${D}${bindir}/
@@ -41,6 +41,15 @@ do_install() {
 
     # Create directory for identity storage
     install -d ${D}${sysconfdir}/edgeos
+
+    # Create Wendy/WendyOS version file
+    install -d ${D}${sysconfdir}/wendy
+    echo "WendyOS-${DISTRO_VERSION}" > ${WORKDIR}/version.txt
+    install -m 0644 ${WORKDIR}/version.txt ${D}${sysconfdir}/wendy/version.txt
+
+    # Create build ID file (actual date will be set at first boot if needed)
+    echo "WendyOS-${DISTRO_VERSION}" > ${WORKDIR}/edgeos-build-id
+    install -m 0644 ${WORKDIR}/edgeos-build-id ${D}${sysconfdir}/edgeos-build-id
 }
 
 FILES:${PN} += "${bindir}/generate-uuid.sh"
@@ -52,5 +61,7 @@ FILES:${PN} += "${systemd_system_unitdir}/edgeos-uuid-generate.service"
 FILES:${PN} += "${systemd_system_unitdir}/edgeos-device-name-generate.service"
 FILES:${PN} += "${systemd_system_unitdir}/edgeos-identity.service"
 FILES:${PN} += "${sysconfdir}/edgeos"
+FILES:${PN} += "${sysconfdir}/wendy/version.txt"
+FILES:${PN} += "${sysconfdir}/edgeos-build-id"
 
-RDEPENDS:${PN} = "bash util-linux-uuidgen avahi-daemon coreutils"
+RDEPENDS:${PN} = "bash util-linux-uuidgen avahi-daemon coreutils iproute2"

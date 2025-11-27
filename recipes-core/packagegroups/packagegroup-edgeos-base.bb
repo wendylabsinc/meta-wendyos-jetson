@@ -19,7 +19,9 @@ RDEPENDS:${PN} = " \
     usbutils \
     tree \
     avahi-daemon \
+    avahi-edgeos-hostname \
     avahi-utils \
+    k3s-agent \
     edgeos-identity \
     edgeos-agent \
     edgeos-user \
