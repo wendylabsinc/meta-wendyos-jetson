@@ -7,7 +7,8 @@
 set -Eeuo pipefail
 
 UUID_FILE="/etc/edgeos/device-uuid"
-PREFIX="edgeos"
+DEVICE_NAME_FILE="/etc/edgeos/device-name"
+PREFIX="wendyos"
 STATE_DIR="/etc/edgeos"
 STATE_HOSTNAME_FILE="${STATE_DIR}/hostname"
 
@@ -54,11 +55,21 @@ get_legacy_id() {
     echo "$device_id"
 }
 
-# Generate hostname from UUID (preferred) or legacy ID (fallback)
+# Generate hostname from device name (preferred) or UUID/legacy ID (fallback)
 generate_hostname() {
-    local uuid short_id legacy
-    uuid="$(get_device_uuid)"
+    local device_name uuid short_id legacy
 
+    # Try to use the human-readable device name first
+    if [ -f "$DEVICE_NAME_FILE" ]; then
+        device_name=$(cat "$DEVICE_NAME_FILE" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+        if [ -n "$device_name" ]; then
+            echo "${PREFIX}-${device_name}"
+            return
+        fi
+    fi
+
+    # Fallback to UUID-based hostname
+    uuid="$(get_device_uuid)"
     if [ -n "$uuid" ] && is_valid_uuid "$uuid"; then
         uuid="${uuid//-/}"
         uuid="${uuid,,}"
@@ -88,7 +99,7 @@ set_hostname() {
 
     if command -v hostnamectl >/dev/null 2>&1; then
         hostnamectl set-hostname "${new_hostname}"
-        echo "${new_hostname}" > /etc/hostname   # menține sincron/compat
+        echo "${new_hostname}" > /etc/hostname
     else
         echo "${new_hostname}" > /etc/hostname
         hostname "${new_hostname}"
@@ -97,7 +108,7 @@ set_hostname() {
     # Update /etc/hosts (idempotent)
     if [ -f /etc/hosts ]; then
         grep -q "${new_hostname}" /etc/hosts 2>/dev/null || {
-            sed -i '/edgeos-/d' /etc/hosts 2>/dev/null || true
+            sed -i '/\(edgeos-\|wendyos-\)/d' /etc/hosts 2>/dev/null || true
             echo "127.0.1.1 ${new_hostname} ${new_hostname}.local" >> /etc/hosts
         }
     else
@@ -124,11 +135,8 @@ main() {
 
     echo "${new}" > "${STATE_HOSTNAME_FILE}"
 
-    # Restart avahi-daemon to broadcast the new name via mDNS (if present)
-    if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet avahi-daemon.service; then
-        log "Restarting avahi-daemon to pick up new hostname"
-        systemctl restart avahi-daemon.service || true
-    fi
+    # Note: avahi-daemon starts AFTER this service (Before=avahi-daemon.service)
+    # so no need to restart it here - it will pick up the hostname when it starts
 
     log "EdgeOS hostname generation completed: ${new}"
 }
