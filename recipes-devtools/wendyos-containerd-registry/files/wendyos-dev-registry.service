@@ -10,7 +10,7 @@ Type=oneshot
 RemainAfterExit=yes
 Environment=REGISTRY_NAMESPACE=default
 Environment=REGISTRY_NAME=wendyos-dev-registry
-Environment=REGISTRY_IMAGE=wendyos/containerd-registry:latest
+Environment=REGISTRY_IMAGE=wendyos/containerd-registry:v1.0.7
 Environment=LISTEN_ADDRESS=0.0.0.0:5000
 
 # Pre-flight checks
