@@ -13,11 +13,11 @@ StandardError=journal
 SyslogIdentifier=wendy-agent
 
 # Security settings
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectHome=true
-ProtectSystem=strict
-ReadWritePaths=/var/lib/wendy-agent /var/log /etc/wendy-agent /run
+# NoNewPrivileges=true
+# PrivateTmp=true
+# ProtectHome=true
+# ProtectSystem=strict
+# ReadWritePaths=/var/lib/wendy-agent /var/log /etc/wendy-agent /run
 
 # Runtime directories
 RuntimeDirectory=wendy-agent

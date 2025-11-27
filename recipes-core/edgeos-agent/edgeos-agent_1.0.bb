@@ -74,14 +74,18 @@ do_install() {
     install -d ${D}/opt/edgeos/bin
     install -m 0755 ${WORKDIR}/edge-agent-updater.sh ${D}/opt/edgeos/bin/
 
-    # Create runtime directory
+    # Create runtime directories
     install -d ${D}/var/lib/edge-agent
+    install -d ${D}/var/lib/wendy-agent
+    install -d ${D}/opt/wendy
 }
 
 FILES:${PN} = "/usr/local/bin/* \
                /opt/edgeos/bin/* \
+               /opt/wendy \
                ${systemd_system_unitdir}/* \
-               /var/lib/edge-agent"
+               /var/lib/edge-agent \
+               /var/lib/wendy-agent"
 
 # Allow network access during build
 do_compile[network] = "1"
