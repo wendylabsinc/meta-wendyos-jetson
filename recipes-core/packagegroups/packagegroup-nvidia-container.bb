@@ -56,6 +56,7 @@ RDEPENDS:${PN} = " \
     nvidia-container-config \
     nvidia-container-toolkit \
     libnvidia-container \
+    nerdctl \
     cuda-toolkit \
     cuda-cudart \
     cuda-libraries \
@@ -63,7 +64,12 @@ RDEPENDS:${PN} = " \
     cuda-nvtx \
     cuda-cupti \
     tegra-libraries-cuda \
+    tegra-libraries-multimedia \
+    tegra-libraries-multimedia-utils \
+    tegra-libraries-nvsci \
+    tegra-libraries-camera \
     cudnn \
+    cusparselt \
     tensorrt-core \
     tensorrt-plugins \
     "
@@ -76,9 +82,8 @@ RDEPENDS:${PN} = " \
 #  - cuFFT (cufft)
 #  - NPP (npp* image processing)
 #
-# cuSPARSELt (lightweight sparse ops) is referenced in l4t.csv but there's
-# no separate package for it in meta-tegra. It may be bundled with cuda-libraries
-# or not packaged. Verify on target with: ls /usr/lib/aarch64-linux-gnu/libcusparseLt*
+# cuSPARSELt (lightweight sparse ops) is packaged separately via the cusparselt
+# recipe in meta-wendyos-jetson/recipes-devtools/cusparselt/
 
 # Note: TensorRT now included since opengl is enabled in distro config
 
