@@ -46,6 +46,8 @@ IMAGE_INSTALL:append = " \
     tegra-bootcontrol-overlay \
     packagegroup-nvidia-container \
     nvidia-container-config \
+    wendyos-containerd-registry \
+    wendyos-dev-registry-image \
     python3-pip-jetson-config \
     "
 
@@ -57,6 +59,7 @@ IMAGE_INSTALL += " \
                 gadget-setup \
                 gadget-network-config \
                 usb-gadget-modules \
+                usb-network-tuning \
                 e2fsprogs-mke2fs \
                 util-linux-mount \
             ', \
