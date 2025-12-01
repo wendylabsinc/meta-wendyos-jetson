@@ -18,6 +18,7 @@ RDEPENDS:${PN} = " \
     htop \
     usbutils \
     tree \
+    util-linux-fdisk \
     avahi-daemon \
     avahi-edgeos-hostname \
     avahi-utils \
