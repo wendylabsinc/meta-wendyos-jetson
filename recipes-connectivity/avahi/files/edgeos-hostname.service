@@ -1,0 +1,16 @@
+[Unit]
+Description=EdgeOS Hostname Setup
+Wants=edgeos-uuid-generate.service edgeos-device-name-generate.service
+After=edgeos-uuid-generate.service edgeos-device-name-generate.service local-fs.target
+Before=avahi-daemon.service network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/generate-hostname.sh
+ExecStartPost=/bin/sleep 1
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=EdgeOS mDNS Setup
+After=network.target edgeos-usbgadget.service edgeos-uuid-generate.service edgeos-device-name-generate.service
+Before=avahi-daemon.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/update-mdns-uuid.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

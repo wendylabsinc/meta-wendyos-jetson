@@ -256,8 +256,8 @@ done
 }
 
 [ 1 -eq "${opts[remove]}" ] && {
-    printf "Remove Docker image... (%s)\n" "${DOCKER_REPO}"
-    docker image rm "${DOCKER_REPO}"
+    printf "Remove Docker image... (%s:%s)\n" "${DOCKER_REPO}" "${DOCKER_TAG}"
+    docker image rm "${DOCKER_REPO}:${DOCKER_TAG}"
     exit $?
 }
 
@@ -321,7 +321,6 @@ else
         -e "TERM=xterm-256color" \
         -e "LANG=C.UTF-8" \
         -e "DOCKER_TAG=${DOCKER_TAG}" \
-        -u "$(id -u):$(id -g)" \
         --hostname ${DOCKER_HOST} \
         ${DOCKER_ARGS} \
         "${DOCKER_REPO}:${DOCKER_TAG}"
