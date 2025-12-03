@@ -1,0 +1,29 @@
+[Unit]
+Description=WendyOS Registry Image Keeper
+Documentation=https://github.com/wendylabsinc/wendyos-jetson
+After=edgeos-dev-registry-import.service
+Requires=containerd.service
+Before=wendyos-dev-registry.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# Create a dummy container that keeps the registry image referenced
+# This prevents garbage collection from removing the image
+ExecStart=/usr/bin/nerdctl create \
+  --name=wendyos-registry-keeper \
+  --namespace=default \
+  --label=io.wendyos.keeper=true \
+  --label=io.wendyos.purpose=prevent-gc \
+  wendyos/containerd-registry:v1.0.7 \
+  /bin/true
+
+# If it already exists, that's fine
+ExecStartPost=/bin/sh -c 'echo "Registry image keeper container created"'
+
+# Never remove this container - it protects the image
+# ExecStop and ExecStopPost intentionally left empty
+
+[Install]
+WantedBy=multi-user.target

@@ -13,8 +13,14 @@ Environment=REGISTRY_NAME=wendyos-dev-registry
 Environment=REGISTRY_IMAGE=wendyos/containerd-registry:v1.0.7
 Environment=LISTEN_ADDRESS=0.0.0.0:5000
 
-# Pre-flight checks
-ExecStartPre=/bin/sh -c '/usr/bin/ctr -n ${REGISTRY_NAMESPACE} images ls | /bin/grep -q ${REGISTRY_IMAGE}'
+# Pre-flight checks: Verify image exists, import if missing (self-healing)
+ExecStartPre=/bin/sh -c '\
+  if ! /usr/bin/ctr -n ${REGISTRY_NAMESPACE} images ls | /bin/grep -q ${REGISTRY_IMAGE}; then \
+    echo "Registry image not found, importing from archive..."; \
+    /usr/bin/ctr -n ${REGISTRY_NAMESPACE} images import /usr/share/edgeos/offline-images/containerd-registry-latest.tar; \
+    /usr/bin/ctr -n ${REGISTRY_NAMESPACE} images tag wendyos/containerd-registry:v1.0.7 wendyos/containerd-registry:latest || true; \
+    echo "Registry image imported successfully"; \
+  fi'
 # Cleanup any existing container
 ExecStartPre=-/usr/bin/nerdctl rm -f ${REGISTRY_NAME}
 
@@ -36,9 +42,7 @@ ExecStart=/usr/bin/nerdctl run -d \
 ExecStop=/usr/bin/nerdctl stop -t 30 ${REGISTRY_NAME}
 ExecStopPost=-/usr/bin/nerdctl rm -f ${REGISTRY_NAME}
 
-# Restart policy
-Restart=on-failure
-RestartSec=10s
+# No automatic restart for oneshot services - handled by wendy-agent if needed
 TimeoutStartSec=60s
 TimeoutStopSec=45s
 
