@@ -7,7 +7,6 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 SRC_URI = "git://github.com/mihai-chiorean/containerd-registry.git;protocol=https;branch=main \
            file://wendyos-dev-registry.service \
            file://edgeos-dev-registry-import.service \
-           file://edgeos-registry-keeper.service \
            file://wendyos-dev-registry.sh \
           "
 
@@ -34,7 +33,6 @@ RDEPENDS:${PN} = "\
 SYSTEMD_SERVICE:${PN} = "\
     wendyos-dev-registry.service \
     edgeos-dev-registry-import.service \
-    edgeos-registry-keeper.service \
 "
 
 # Enable the import service (runs once on first boot)
@@ -47,7 +45,6 @@ do_install:append() {
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/wendyos-dev-registry.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${WORKDIR}/edgeos-dev-registry-import.service ${D}${systemd_system_unitdir}/
-    install -m 0644 ${WORKDIR}/edgeos-registry-keeper.service ${D}${systemd_system_unitdir}/
 
     # Install management script
     install -d ${D}${bindir}
@@ -60,7 +57,6 @@ do_install:append() {
 FILES:${PN} += "\
     ${systemd_system_unitdir}/wendyos-dev-registry.service \
     ${systemd_system_unitdir}/edgeos-dev-registry-import.service \
-    ${systemd_system_unitdir}/edgeos-registry-keeper.service \
     ${localstatedir}/lib/edgeos \
 "
 
