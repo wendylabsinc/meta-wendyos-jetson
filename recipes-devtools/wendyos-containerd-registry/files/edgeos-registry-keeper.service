@@ -9,6 +9,9 @@ Before=wendyos-dev-registry.service
 Type=oneshot
 RemainAfterExit=yes
 
+# Remove any existing keeper container (ignore errors if it doesn't exist)
+ExecStartPre=-/usr/bin/nerdctl rm -f wendyos-registry-keeper
+
 # Create a dummy container that keeps the registry image referenced
 # This prevents garbage collection from removing the image
 ExecStart=/usr/bin/nerdctl create \
