@@ -14,6 +14,7 @@ RemainAfterExit=yes
 ExecStart=/usr/bin/nerdctl create \
   --name=wendyos-registry-keeper \
   --namespace=default \
+  --network=none \
   --label=io.wendyos.keeper=true \
   --label=io.wendyos.purpose=prevent-gc \
   wendyos/containerd-registry:v1.0.7 \
