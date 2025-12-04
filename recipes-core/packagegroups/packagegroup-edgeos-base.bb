@@ -7,6 +7,7 @@ inherit packagegroup
 SUMMARY:${PN} = "Base support"
 RDEPENDS:${PN} = " \
     packagegroup-core-boot \
+    tegra-flash-reboot \
     bash \
     efibootmgr \
     coreutils \

@@ -72,9 +72,8 @@ declare -Ar repos=(
     [0]="1|git://git.yoctoproject.org/poky.git||${YOCTO_BRANCH}"
     [1]="1|https://github.com/openembedded/meta-openembedded.git||${YOCTO_BRANCH}"
     [2]="1|https://github.com/OE4T/meta-tegra.git||${YOCTO_BRANCH}"
-    [4]="1|git://git.yoctoproject.org/meta-virtualization.git||${YOCTO_BRANCH}"
     [3]="1|https://github.com/OE4T/meta-tegra-community||${YOCTO_BRANCH}"
-    [4]="1|https://github.com/yoctoproject/meta-virtualization.git||${YOCTO_BRANCH}"
+    [4]="1|git://git.yoctoproject.org/meta-virtualization.git||${YOCTO_BRANCH}"
     [5]="1|https://github.com/mendersoftware/meta-mender.git||${YOCTO_BRANCH}"
     [6]="1|https://github.com/mendersoftware/meta-mender-community.git||${YOCTO_BRANCH}"
 )
