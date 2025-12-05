@@ -6,7 +6,8 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
 SRC_URI = "file://edge-agent.service \
            file://edge-agent-updater.service \
            file://edge-agent-updater.timer \
-           file://edge-agent-updater.sh"
+           file://edge-agent-updater.sh \
+           file://download-edge-agent.sh"
 
 S = "${WORKDIR}"
 
@@ -16,38 +17,38 @@ SYSTEMD_SERVICE:${PN} = "edge-agent.service edge-agent-updater.service edge-agen
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
 do_compile() {
-    bbnote "Downloading edge-agent binary for aarch64..."
+    bbnote "Downloading wendy-agent binary for aarch64..."
 
-    # Get the latest pre-release from GitHub
-    RELEASES_URL="https://api.github.com/repos/edgeengineer/edge-agent/releases"
+    # Get the latest stable release from GitHub (excludes pre-releases)
+    RELEASES_URL="https://api.github.com/repos/wendylabsinc/wendy-agent/releases/latest"
 
-    # Fetch releases list
-    wget -q -O ${B}/releases.json "${RELEASES_URL}" || \
-        curl -sL -o ${B}/releases.json "${RELEASES_URL}" || \
-        bbfatal "Failed to fetch releases from GitHub"
+    # Fetch latest stable release
+    wget -q -O ${B}/release.json "${RELEASES_URL}" || \
+        curl -sL -o ${B}/release.json "${RELEASES_URL}" || \
+        bbfatal "Failed to fetch latest release from GitHub"
 
-    # Extract download URL for aarch64 binary using simple grep (no jq dependency)
-    DOWNLOAD_URL=$(cat ${B}/releases.json | \
-        grep -o '"browser_download_url"[[:space:]]*:[[:space:]]*"[^"]*wendy-agent-linux-static-musl-aarch64[^"]*"' | \
+    # Extract download URL for aarch64 binary (match .tar.gz files only)
+    DOWNLOAD_URL=$(cat ${B}/release.json | \
+        grep -o '"browser_download_url"[[:space:]]*:[[:space:]]*"[^"]*wendy-agent-linux-static-musl-aarch64[^"]*\.tar\.gz[^"]*"' | \
         head -1 | cut -d'"' -f4)
 
     if [ -z "${DOWNLOAD_URL}" ]; then
-        bbfatal "Failed to find wendy-agent-linux-static-musl-aarch64 binary in releases"
+        bbfatal "Failed to find wendy-agent-linux-static-musl-aarch64 binary in release"
     fi
 
     bbnote "Downloading from: ${DOWNLOAD_URL}"
 
     # Download the binary archive
-    wget -O ${B}/edge-agent.tar.gz "${DOWNLOAD_URL}" || \
-        curl -L -o ${B}/edge-agent.tar.gz "${DOWNLOAD_URL}" || \
-        bbfatal "Failed to download edge-agent binary"
+    wget -O ${B}/wendy-agent.tar.gz "${DOWNLOAD_URL}" || \
+        curl -L -o ${B}/wendy-agent.tar.gz "${DOWNLOAD_URL}" || \
+        bbfatal "Failed to download wendy-agent binary"
 
     # Extract the archive
-    tar -xzf ${B}/edge-agent.tar.gz -C ${B}
+    tar -xzf ${B}/wendy-agent.tar.gz -C ${B}
 
-    # Find and prepare the binary
+    # Find and prepare the binary (exclude wendy-cli)
     if [ ! -f ${B}/wendy-agent ]; then
-        BINARY=$(find ${B} -name wendy-agent -type f ! -path "*/edge-cli*" | head -1)
+        BINARY=$(find ${B} -name wendy-agent -type f ! -path "*/wendy-cli*" | head -1)
         if [ -n "${BINARY}" ]; then
             mv "${BINARY}" ${B}/wendy-agent
         else
@@ -70,9 +71,10 @@ do_install() {
     install -m 0644 ${WORKDIR}/edge-agent-updater.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${WORKDIR}/edge-agent-updater.timer ${D}${systemd_system_unitdir}/
 
-    # Install updater script
+    # Install updater and download scripts
     install -d ${D}/opt/edgeos/bin
     install -m 0755 ${WORKDIR}/edge-agent-updater.sh ${D}/opt/edgeos/bin/
+    install -m 0755 ${WORKDIR}/download-edge-agent.sh ${D}/opt/edgeos/bin/
 
     # Create runtime directories
     install -d ${D}/var/lib/edge-agent
@@ -94,4 +96,5 @@ do_compile[network] = "1"
 INSANE_SKIP:${PN} += "already-stripped"
 
 # Runtime dependencies
-RDEPENDS:${PN} = "bash"
+# curl/wget needed for auto-updater, tar for extraction
+RDEPENDS:${PN} = "bash curl tar"

@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # WendyOS Agent Download Script
 # Downloads the wendy-agent binary from GitHub releases
@@ -60,27 +61,30 @@ check_requirements() {
     fi
 }
 
-# Get release information from GitHub - simplified version
+# Get release information from GitHub
+# Fetches latest stable release (excludes pre-releases)
 get_release_info() {
-    local api_url="https://api.github.com/repos/${GITHUB_REPO}/releases"
+    local api_url="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
 
-    log "Fetching releases from GitHub..." >&2
+    log "Fetching latest stable release from GitHub (excludes pre-releases)..." >&2
 
     # Use wget if available, otherwise curl
-    local releases_json
+    local release_json
     if command -v wget >/dev/null 2>&1; then
-        releases_json=$(wget -q -O - "${api_url}" 2>/dev/null) || error "Failed to fetch releases"
+        release_json=$(wget -q -O - "${api_url}" 2>/dev/null) || error "Failed to fetch latest release"
     else
-        releases_json=$(curl -sL "${api_url}" 2>/dev/null) || error "Failed to fetch releases"
+        release_json=$(curl -sL "${api_url}" 2>/dev/null) || error "Failed to fetch latest release"
     fi
 
-    # Return the first release (latest pre-release or release)
+    # Validate we got a proper release
     if command -v jq >/dev/null 2>&1; then
-        echo "${releases_json}" | jq '.[0]' 2>/dev/null
-    else
-        # If jq is not available, return the raw JSON (first release)
-        echo "${releases_json}"
+        local tag_name=$(echo "${release_json}" | jq -r '.tag_name // empty')
+        if [ -z "${tag_name}" ]; then
+            error "No stable releases found. Please create a release with semver tag (e.g., v1.0.0)"
+        fi
     fi
+
+    echo "${release_json}"
 }
 
 # Download the binary - simplified version
@@ -91,14 +95,17 @@ download_binary() {
     mkdir -p "${TEMP_DIR}"
 
     # Extract download URL for aarch64 binary
+    # Expected asset name format (guaranteed by workflow):
+    #   wendy-agent-linux-static-musl-aarch64-vX.Y.Z.tar.gz
+    # Example: wendy-agent-linux-static-musl-aarch64-v0.2.0.tar.gz
     local download_url
 
     if command -v jq >/dev/null 2>&1; then
-        # Use jq if available - specifically look for wendy-agent (not wendy-cli)
-        download_url=$(echo "${release_info}" | jq -r '.assets[]? | select(.name | contains("wendy-agent-linux-static-musl-aarch64")) | .browser_download_url' 2>/dev/null | head -1)
+        # Use jq if available - match wendy-agent platform archive (not wendy-cli)
+        download_url=$(echo "${release_info}" | jq -r '.assets[]? | select(.name | test("wendy-agent-linux-static-musl-aarch64.*\\.tar\\.gz$")) | .browser_download_url' 2>/dev/null | head -1)
     else
         # Fallback to grep - look for the URL pattern
-        download_url=$(echo "${release_info}" | grep -o '"browser_download_url"[[:space:]]*:[[:space:]]*"[^"]*wendy-agent-linux-static-musl-aarch64[^"]*"' | head -1 | cut -d'"' -f4)
+        download_url=$(echo "${release_info}" | grep -o '"browser_download_url"[[:space:]]*:[[:space:]]*"[^"]*wendy-agent-linux-static-musl-aarch64[^"]*\.tar\.gz[^"]*"' | head -1 | cut -d'"' -f4)
     fi
 
     if [ -z "${download_url}" ] || [ "${download_url}" = "null" ]; then
@@ -150,14 +157,7 @@ install_binary() {
 
     # Install new binary
     log "Installing new binary to ${INSTALL_DIR}/${BINARY_NAME}"
-    mv "${TEMP_DIR}/${BINARY_NAME}" "${INSTALL_DIR}/${BINARY_NAME}.real"
-
-    # If there's a placeholder script, replace it
-    if [ -f "${INSTALL_DIR}/${BINARY_NAME}" ] && grep -q "Edge-agent not yet installed" "${INSTALL_DIR}/${BINARY_NAME}" 2>/dev/null; then
-        mv "${INSTALL_DIR}/${BINARY_NAME}.real" "${INSTALL_DIR}/${BINARY_NAME}"
-    else
-        mv "${INSTALL_DIR}/${BINARY_NAME}.real" "${INSTALL_DIR}/${BINARY_NAME}"
-    fi
+    mv "${TEMP_DIR}/${BINARY_NAME}" "${INSTALL_DIR}/${BINARY_NAME}"
 
     # Ensure proper permissions
     chmod 755 "${INSTALL_DIR}/${BINARY_NAME}"
