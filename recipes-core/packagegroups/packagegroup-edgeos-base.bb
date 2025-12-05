@@ -7,6 +7,7 @@ inherit packagegroup
 SUMMARY:${PN} = "Base support"
 RDEPENDS:${PN} = " \
     packagegroup-core-boot \
+    tegra-flash-reboot \
     bash \
     efibootmgr \
     coreutils \
@@ -18,6 +19,7 @@ RDEPENDS:${PN} = " \
     htop \
     usbutils \
     tree \
+    util-linux-fdisk \
     avahi-daemon \
     avahi-edgeos-hostname \
     avahi-utils \

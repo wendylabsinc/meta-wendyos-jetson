@@ -11,11 +11,16 @@ This repository provides the meta-layer and build flow to build **WendyOS** for 
 - Git
 - At least 100GB of free disk space
 - Reliable internet connection
+- The user under which the image is built must be added to `docker` group
+
+```bash
+$ sudo usermod -aG docker $USER
+```
 
 ### Directory Structure Requirements
 
 **Important**:
-The meta-layer repository must be located within or be the working directory where you run the bootstrap script. The bootstrap creates a Docker container that mounts the working directory, so the meta-layer must be accessible within that mount.
+The meta layer repository must be located within the working directory where you run the bootstrap script. The bootstrap creates a Docker container that mounts the working directory, so the meta-layer must be accessible within that mount.
 
 Recommended structure:
 ```
@@ -33,20 +38,25 @@ Recommended structure:
    cd /path/to/project
    git clone <repository-url> meta-wendyos
    cd meta-wendyos
+   git checkout <branch>
    ```
 
-Current repository URL:
- `git@github.com:wendylabsinc/meta-wendyos-jetson.git`
+The repository URL is:
+`git@github.com:wendylabsinc/meta-wendyos-jetson.git`
 
 2. **Run the bootstrap script**:
+
+   Switch back to working folder and run the `bootstrap` script:
+
    ```bash
-   [EDGEOS_BRANCH=<branch>] ./bootstrap.sh
+   cd /path/to/project
+   ./meta-wendyos/bootstrap.sh
    ```
 
    The bootstrap script will:
    - Validate that the meta-layer is within the working directory
    - Clone all required Yocto layers (`poky`, `meta-openembedded`, `meta-tegra`, etc.)
-   - Create the `build` directory from configuration meta layer `conf/template` templates
+   - Create the `build` directory using the meta layer `conf/template` configuration templates
    - Set up the Docker build environment in `docker`
    - Build the Docker image (only if it does not already exist)
 
@@ -56,14 +66,14 @@ Current repository URL:
    - `DL_DIR` - Download directory for source tarballs (recommended for caching)
    - `SSTATE_DIR` - Shared state cache directory (speeds up rebuilds)
    - `MACHINE` - Target machine configuration:
+     - `jetson-orin-nano-devkit-nvme-edgeos` (NVMe boot) [**default**]
      - `jetson-orin-nano-devkit-edgeos` (eMMC/SD card boot)
-     - `jetson-orin-nano-devkit-nvme-edgeos` (NVMe boot)
-   - `EDGEOS_FLASH_IMAGE_SIZE` - Flash image size (default: "64GB"):
+   - `EDGEOS_FLASH_IMAGE_SIZE` - Flash image size: "64GB"):
      - `"4GB"` - 3.2GB Mender storage (~1.3GB per rootfs partition)
      - `"8GB"` - 6.4GB Mender storage (~2.9GB per rootfs partition)
      - `"16GB"` - 12.8GB Mender storage (~6GB per rootfs partition)
      - `"32GB"` - 25.7GB Mender storage (~12GB per rootfs partition)
-     - `"64GB"` - 51GB Mender storage (~25GB per rootfs partition)
+     - `"64GB"` - 51GB Mender storage (~25GB per rootfs partition) [**default**]
 
 4. **Build the image**
 
@@ -90,8 +100,8 @@ build/tmp/deploy/images/<machine>/edgeos-image-<machine>.rootfs.tegraflash.tar.g
 ```
 
 **Important**: The flashing script differs based on your target machine:
-- **eMMC/SD card** (`jetson-orin-nano-devkit-edgeos`) → use `dosdcard.sh`
 - **NVMe** (`jetson-orin-nano-devkit-nvme-edgeos`) → use `doexternal.sh`
+- **eMMC/SD card** (`jetson-orin-nano-devkit-edgeos`) → use `dosdcard.sh`
 
 #### For eMMC/SD Card Builds
 
@@ -147,12 +157,14 @@ cd ./deploy
 sudo ./doexternal.sh -s 64G wendyos-nvme.img
 ```
 
-**Important**: You must specify the size with `-s` parameter. The size should match your `EDGEOS_FLASH_IMAGE_SIZE` setting:
-- `-s 4G` for 4GB images
-- `-s 8G` for 8GB images
-- `-s 16G` for 16GB images
-- `-s 32G` for 32GB images
-- `-s 64G` for 64GB images
+**Important**: You **must** specify the size with `-s` parameter, and it **must match** your `EDGEOS_FLASH_IMAGE_SIZE` setting in `build/conf/local.conf`:
+- `-s 4G` for `EDGEOS_FLASH_IMAGE_SIZE = "4GB"`
+- `-s 8G` for `EDGEOS_FLASH_IMAGE_SIZE = "8GB"`
+- `-s 16G` for `EDGEOS_FLASH_IMAGE_SIZE = "16GB"`
+- `-s 32G` for `EDGEOS_FLASH_IMAGE_SIZE = "32GB"`
+- `-s 64G` for `EDGEOS_FLASH_IMAGE_SIZE = "64GB"`
+
+**Warning**: Using a mismatched size will result in a corrupted or non-bootable image!
 
 This creates `wendyos-nvme.img`, which you can flash using dd or GUI tools (see below).
 
@@ -198,7 +210,8 @@ The system includes Mender for Over-The-Air updates with A/B partition redundanc
 - `/dev/nvme0n1p1` - Root filesystem A
 - `/dev/nvme0n1p2` - Root filesystem B
 - `/dev/nvme0n1p11` - Boot partition (shared)
-- `/dev/nvme0n1p15` - Data partition (persistent)
+- `/dev/nvme0n1p15` - UDA partition (NVIDIA reserved, not used by EdgeOS)
+- `/dev/nvme0n1p17` - Mender data partition (expandable, mounted at `/data`)
 
 ### Setting Up Mender Server
 

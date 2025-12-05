@@ -1,42 +1,34 @@
 SUMMARY = "EdgeOS Default User Configuration"
-DESCRIPTION = "Creates the default 'edge' user with appropriate permissions for EdgeOS"
+DESCRIPTION = "Creates the default 'edge' user with appropriate permissions for EdgeOS. \
+Home directory is initialized on first boot from persistent storage (/data/home)."
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 
-inherit useradd
+inherit useradd systemd
+
+SRC_URI = " \
+    file://edgeos-user-setup.sh \
+    file://edgeos-user-setup.service \
+"
 
 # Create edge user - simplified group list (non-existent groups cause failures)
 USERADD_PACKAGES = "${PN}"
 # Password 'edge' hash generated with: openssl passwd -6 -salt 5ixFr0sKRtsKKKhY edge
+# NOTE: useradd with -m flag will try to create home, but since /home is bind-mounted
+# from /data/home, the actual initialization happens via first-boot service
 USERADD_PARAM:${PN} = "-m -d /home/edge -s /bin/bash -G dialout,video,audio,users -p '\$6\$5ixFr0sKRtsKKKhY\$NBU4Np0LBKjFMFZ5BpJr8wLT5UvTpY1cVFGdUWMCs0m4UDGMTHlU2efR6Qfwq5BMtCq8wqN.RoZH/vEt/cuyE1' edge"
 
+SYSTEMD_SERVICE:${PN} = "edgeos-user-setup.service"
+SYSTEMD_AUTO_ENABLE = "enable"
+
 do_install() {
-    # Create home directory structure
-    install -d -m 0755 ${D}/home/edge
-    install -d -m 0700 ${D}/home/edge/.ssh
-    
-    # Create default .bashrc
-    cat > ${D}/home/edge/.bashrc << 'EOF'
-# EdgeOS user environment
-export PS1='\u@\h:\w\$ '
-export PATH=$PATH:/usr/local/bin:/usr/sbin:/sbin
+    # Install first-boot setup script
+    install -d ${D}${sbindir}
+    install -m 0755 ${WORKDIR}/edgeos-user-setup.sh ${D}${sbindir}/edgeos-user-setup.sh
 
-# Aliases
-alias ll='ls -la'
-alias l='ls -CF'
-
-# EdgeOS specific
-if [ -f /etc/edgeos-build-id ]; then
-    export EDGEOS_BUILD=$(cat /etc/edgeos-build-id)
-fi
-
-if [ -f /etc/edgeos/device-uuid ]; then
-    export EDGEOS_UUID=$(cat /etc/edgeos/device-uuid)
-fi
-EOF
-    
-    # Set proper ownership
-    chown -R 1000:1000 ${D}/home/edge
+    # Install systemd service
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/edgeos-user-setup.service ${D}${systemd_system_unitdir}/edgeos-user-setup.service
 }
 
 pkg_postinst_ontarget:${PN}() {
@@ -47,7 +39,11 @@ pkg_postinst_ontarget:${PN}() {
     fi
 }
 
-FILES:${PN} += "/home/edge"
+FILES:${PN} += " \
+    ${sbindir}/edgeos-user-setup.sh \
+    ${systemd_system_unitdir}/edgeos-user-setup.service \
+"
 
-# Ensure sudo is available
-RDEPENDS:${PN} = "sudo bash"
+# Ensure required packages are available
+# systemd-mount-home provides the /home bind mount
+RDEPENDS:${PN} = "sudo bash systemd systemd-mount-home"

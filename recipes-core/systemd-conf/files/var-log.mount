@@ -1,0 +1,22 @@
+
+[Unit]
+Description=Bind mount /var/log from persistent data partition
+Documentation=man:systemd.mount(5)
+
+# Ensure data partition is mounted and filesystem is fully expanded
+RequiresMountsFor=/data
+After=data.mount
+
+# Wait for Mender data partition resize to complete (if enabled)
+After=mender-systemd-growfs-data.service
+Before=systemd-journald.service
+DefaultDependencies=no
+
+[Mount]
+What=/data/log
+Where=/var/log
+Type=none
+Options=bind,x-systemd.mkdir
+
+[Install]
+WantedBy=local-fs.target

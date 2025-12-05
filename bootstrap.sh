@@ -72,9 +72,8 @@ declare -Ar repos=(
     [0]="1|git://git.yoctoproject.org/poky.git||${YOCTO_BRANCH}"
     [1]="1|https://github.com/openembedded/meta-openembedded.git||${YOCTO_BRANCH}"
     [2]="1|https://github.com/OE4T/meta-tegra.git||${YOCTO_BRANCH}"
-    [4]="1|git://git.yoctoproject.org/meta-virtualization.git||${YOCTO_BRANCH}"
     [3]="1|https://github.com/OE4T/meta-tegra-community||${YOCTO_BRANCH}"
-    [4]="1|https://github.com/yoctoproject/meta-virtualization.git||${YOCTO_BRANCH}"
+    [4]="1|git://git.yoctoproject.org/meta-virtualization.git||${YOCTO_BRANCH}"
     [5]="1|https://github.com/mendersoftware/meta-mender.git||${YOCTO_BRANCH}"
     [6]="1|https://github.com/mendersoftware/meta-mender-community.git||${YOCTO_BRANCH}"
 )
@@ -244,24 +243,20 @@ clone_repos || {
 
 image_name=$(basename "${META_LAYER_DIR}")
 
+printf "\nPrepare the Yocto build environment...\n"
 cd "${PROJECT_DIR}"
-if [[ ! -d "${YOCTO_BUILD_DIR}" ]]
+mkdir -p "${YOCTO_BUILD_DIR}/conf"
+
+# use the template only if the corresponding one in build/conf doesn't exist
+if [[ ! -e "./${YOCTO_BUILD_DIR}/conf/bblayers.conf" ]]
 then
-    printf "\nPrepare the Yocto build environment...\n"
-    mkdir -p "${YOCTO_BUILD_DIR}/conf"
-
     cp "${META_LAYER_DIR}/conf/template/bblayers.conf" "./${YOCTO_BUILD_DIR}/conf"
-    cp "${META_LAYER_DIR}/conf/template/local.conf" "./${YOCTO_BUILD_DIR}/conf"
-
-    # tmp="${DOCKER_WORK_DIR}/repos"
-    # sed -i.bak "s|%PATH%|${tmp}|g" "./${YOCTO_BUILD_DIR}/conf/bblayers.conf"
-
-    # tmp="${DOCKER_WORK_DIR}/${image_name}"
-    # sed -i.bak "s|%PATH_META%|${tmp}|g" "./${YOCTO_BUILD_DIR}/conf/bblayers.conf"
-
     sed -i.bak "s|%META-REPO%|${image_name}|g" "./${YOCTO_BUILD_DIR}/conf/bblayers.conf"
-else
-    printf "Yocto build directory already exists!\n"
+fi
+
+if [[ ! -e "./${YOCTO_BUILD_DIR}/conf/local.conf" ]]
+then
+    cp "${META_LAYER_DIR}/conf/template/local.conf" "./${YOCTO_BUILD_DIR}/conf"
 fi
 
 printf "\nDirectory structure:\n"
@@ -282,12 +277,12 @@ cd "${PROJECT_DIR}/docker"
 cd "${WORK_DIR}"
 cat <<EOF
 
-Run the command(s):
-   # run the docker container
+Run the following command(s):
+   # start the docker container
    cd ./docker
    ./docker-util.sh run
 
-   # (on container)
+   # (within container)
    cd ./${IMAGE_NAME}
    . ./repos/poky/oe-init-build-env ${YOCTO_BUILD_DIR}
    bitbake edgeos-image
