@@ -57,7 +57,6 @@ IMAGE_INSTALL += " \
         d.getVar('EDGEOS_USB_GADGET') == '1', \
             ' \
                 gadget-setup \
-                gadget-network-config \
                 usb-gadget-modules \
                 usb-network-tuning \
                 e2fsprogs-mke2fs \
@@ -66,6 +65,9 @@ IMAGE_INSTALL += " \
             '' \
         )} \
     "
+
+# Note: gadget-network-config (standalone dnsmasq) removed
+# NetworkManager's connection sharing provides DHCP via dnsmasq with DBus support
 
 IMAGE_ROOTFS_SIZE ?= "8192"
 IMAGE_ROOTFS_EXTRA_SPACE:append = "${@bb.utils.contains("DISTRO_FEATURES", "systemd", " + 4096", "", d)}"

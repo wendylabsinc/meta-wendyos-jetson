@@ -1,7 +1,8 @@
 [Unit]
 Description=USB Gadget setup (NCM)
 After=local-fs.target
-Before=network.target
+Before=NetworkManager.service network.target
+Wants=NetworkManager.service
 
 [Service]
 Type=oneshot
