@@ -1,0 +1,18 @@
+
+[Unit]
+Description=Bind mount persistent /etc files from /data
+DefaultDependencies=no
+Conflicts=shutdown.target
+After=local-fs.target data.mount mender-systemd-growfs-data.service
+Before=sysinit.target edgeos-uuid-generate.service edgeos-device-name-generate.service
+Requires=data.mount
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/setup-etc-binds.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target
