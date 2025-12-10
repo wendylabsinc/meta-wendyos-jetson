@@ -1,3 +1,4 @@
+
 # Fix mender-resize-data-part substitution for NVMe devices
 # The upstream recipe doesn't properly substitute MENDER_DATA_PART for NVMe configs
 
