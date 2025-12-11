@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# System resource information
+
+# Colors
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo
+echo "System Resources:"
+
+# CPU information
+CPU_COUNT=$(nproc)
+CPU_LOAD=$(uptime | awk -F'load average: ' '{print $2}')
+echo "  CPU: ${CPU_COUNT} cores, Load: ${CPU_LOAD}"
+
+# Memory information
+MEM_TOTAL=$(free -h | grep "^Mem:" | awk '{print $2}')
+MEM_USED=$(free -h | grep "^Mem:" | awk '{print $3}')
+MEM_FREE=$(free -h | grep "^Mem:" | awk '{print $4}')
+MEM_PERCENT=$(free | grep "^Mem:" | awk '{printf "%.1f", $3/$2 * 100}')
+
+if [ $(echo "$MEM_PERCENT > 80" | bc -l 2>/dev/null || echo "0") -eq 1 ]; then
+    MEM_COLOR="${RED}"
+elif [ $(echo "$MEM_PERCENT > 60" | bc -l 2>/dev/null || echo "0") -eq 1 ]; then
+    MEM_COLOR="${YELLOW}"
+else
+    MEM_COLOR="${GREEN}"
+fi
+
+echo -e "  Memory: ${MEM_COLOR}${MEM_USED}${NC}/${MEM_TOTAL} (${MEM_COLOR}${MEM_PERCENT}%${NC} used)"
+
+# Disk information
+DISK_USAGE=$(df -h / | tail -1 | awk '{print $3"/"$2" ("$5" used)"}')
+DISK_PERCENT=$(df / | tail -1 | awk '{gsub("%",""); print $5}')
+
+if [ "$DISK_PERCENT" -gt 80 ]; then
+    DISK_COLOR="${RED}"
+elif [ "$DISK_PERCENT" -gt 60 ]; then
+    DISK_COLOR="${YELLOW}"
+else
+    DISK_COLOR="${GREEN}"
+fi
+
+echo -e "  Disk: ${DISK_COLOR}${DISK_USAGE}${NC}"
+
+# Network information
+PRIMARY_IP=$(ip -4 addr show scope global | grep inet | head -1 | awk '{print $2}' | cut -d/ -f1)
+if [ -n "$PRIMARY_IP" ]; then
+    echo "  IP Address: ${PRIMARY_IP}"
+fi
+
+# Uptime
+UPTIME=$(uptime -p 2>/dev/null || uptime | awk '{print $3,$4}' | sed 's/,$//')
+echo "  Uptime: ${UPTIME}"
+
+echo
