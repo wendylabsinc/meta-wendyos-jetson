@@ -36,5 +36,5 @@ FILES:${PN} += " \
 # Ensure NetworkManager starts after USB gadget is set up
 SYSTEMD_AUTO_ENABLE = "enable"
 
-# Dependencies
-RDEPENDS:${PN} += "networkmanager"
+# dnsmasq required for connection sharing (ipv4.method=shared)
+RDEPENDS:${PN} += "dnsmasq"
