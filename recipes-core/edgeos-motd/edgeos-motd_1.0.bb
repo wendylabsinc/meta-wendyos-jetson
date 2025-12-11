@@ -38,16 +38,11 @@ if [ -x /usr/bin/update-motd ] && [ -t 0 ]; then
 fi
 EOF
     chmod 0644 ${D}${sysconfdir}/profile.d/motd.sh
-
-    # Clear static MOTD so dynamic one shows
-    install -d ${D}${sysconfdir}
-    echo "" > ${D}${sysconfdir}/motd
 }
 
 FILES:${PN} = " \
     ${sysconfdir}/update-motd.d/ \
     ${sysconfdir}/profile.d/motd.sh \
-    ${sysconfdir}/motd \
     ${bindir}/update-motd \
     "
 
