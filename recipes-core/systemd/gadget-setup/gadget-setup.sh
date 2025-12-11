@@ -89,11 +89,7 @@ done
 
 echo "$UDC" > UDC
 
-# Bring link up with static IP (DHCP to host handled by dnsmasq service)
-ip addr add 10.42.0.1/24 dev "$NET_IF" 2>/dev/null || true
-ip link set "$NET_IF" up 2>/dev/null || true
-
-# Kick dnsmasq (dedicated unit below) now that usb0 exists
-systemctl try-restart gadget-dnsmasq.service 2>/dev/null || true
-
-echo "Gadget ready: $SEL on $NET_IF (10.42.0.1/24), UDC=$UDC"
+# USB gadget interface will be configured by NetworkManager
+# NetworkManager will handle IP configuration and connection sharing
+echo "Gadget ready: $SEL on $NET_IF, UDC=$UDC"
+echo "NetworkManager will configure network settings"

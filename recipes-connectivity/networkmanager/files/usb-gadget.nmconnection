@@ -1,0 +1,24 @@
+[connection]
+id=usb-gadget
+uuid=12345678-1234-1234-1234-123456789abc
+type=ethernet
+interface-name=usb0
+autoconnect=true
+autoconnect-priority=100
+wait-device-timeout=60000
+
+[ethernet]
+mac-address-blacklist=
+
+[ipv4]
+method=shared
+address1=10.42.0.1/24
+dns-search=
+# Connection sharing enables built-in DHCP server (via dnsmasq internally)
+# DHCP range will be automatically assigned from 10.42.0.0/24 subnet
+
+[ipv6]
+method=link-local
+addr-gen-mode=stable-privacy
+
+[proxy]

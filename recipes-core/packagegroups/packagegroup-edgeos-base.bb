@@ -15,6 +15,9 @@ RDEPENDS:${PN} = " \
     file \
     util-linux \
     iproute2 \
+    lsof \
+    networkmanager \
+    networkmanager-nmcli \
     vim \
     htop \
     usbutils \
