@@ -72,6 +72,7 @@ RDEPENDS:${PN} = " \
     cusparselt \
     tensorrt-core \
     tensorrt-plugins \
+    libcufile \
     "
 
 # Note: cuda-libraries likely includes:
