@@ -5,13 +5,18 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
 
 inherit systemd
 
+# DeepStream support flag (default off)
+EDGEOS_DEEPSTREAM ?= "0"
+
 SRC_URI = " \
     file://l4t.csv \
+    file://l4t-deepstream.csv \
     file://devices-wendyos.csv \
     file://edgeos-cdi-generate.service \
     file://edgeos-cuda-detect.service \
     file://generate-cuda-env.sh \
     file://99-z-nvidia-tegra.rules \
+    file://fix-cdi-gstreamer-paths.sh \
     "
 
 S = "${WORKDIR}"
@@ -22,12 +27,25 @@ SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 do_install() {
     # Install CSV files to the NVIDIA container runtime config directory
     install -d ${D}${sysconfdir}/nvidia-container-runtime/host-files-for-container.d
+
+    # Install base l4t.csv (CUDA/PyTorch libraries)
     install -m 0644 ${WORKDIR}/l4t.csv ${D}${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/
+
+    # Install DeepStream CSV if enabled
+    if [ "${EDGEOS_DEEPSTREAM}" = "1" ]; then
+        bbnote "Installing DeepStream l4t-deepstream.csv"
+        install -m 0644 ${WORKDIR}/l4t-deepstream.csv ${D}${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/
+    fi
+
+    # Install WendyOS device/sysfs mappings (supplements meta-tegra's devices.csv)
     install -m 0644 ${WORKDIR}/devices-wendyos.csv ${D}${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/
 
     # Install CUDA environment detection script
     install -d ${D}${bindir}
     install -m 0755 ${WORKDIR}/generate-cuda-env.sh ${D}${bindir}/
+
+    # Install CDI post-processing script for DeepStream path fixes
+    install -m 0755 ${WORKDIR}/fix-cdi-gstreamer-paths.sh ${D}${bindir}/
 
     # Install systemd services
     install -d ${D}${systemd_system_unitdir}
@@ -43,8 +61,10 @@ do_install() {
 }
 
 FILES:${PN} += "${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/l4t.csv"
+FILES:${PN} += "${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/l4t-deepstream.csv"
 FILES:${PN} += "${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/devices-wendyos.csv"
 FILES:${PN} += "${bindir}/generate-cuda-env.sh"
+FILES:${PN} += "${bindir}/fix-cdi-gstreamer-paths.sh"
 FILES:${PN} += "${systemd_system_unitdir}/edgeos-cdi-generate.service"
 FILES:${PN} += "${systemd_system_unitdir}/edgeos-cuda-detect.service"
 FILES:${PN} += "${sysconfdir}/udev/rules.d/99-z-nvidia-tegra.rules"
