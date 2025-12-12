@@ -1,7 +1,8 @@
 [Unit]
 Description=WendyOS Agent
 Documentation=https://github.com/wendylabsinc/wendy-agent
-After=multi-user.target
+After=network.target gadget-setup.service
+Wants=network.target
 
 [Service]
 Type=simple
