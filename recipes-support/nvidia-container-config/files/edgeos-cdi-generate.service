@@ -13,9 +13,13 @@ Type=oneshot
 ExecStartPre=/bin/sleep 2
 # Create directory if needed
 ExecStartPre=/bin/mkdir -p /etc/cdi
-# Generate CDI spec using CSV mode (reads l4t.csv, devices.csv, drivers.csv)
+# Generate CDI spec using CSV mode (reads default CSVs plus devices-wendyos.csv)
 # This runs on every boot to ensure CDI spec is up-to-date with current CSV files
-ExecStart=/usr/bin/nvidia-ctk cdi generate --mode=csv --output=/etc/cdi/nvidia.yaml
+ExecStart=/usr/bin/nvidia-ctk cdi generate --mode=csv --output=/etc/cdi/nvidia.yaml \
+    --csv.file=/etc/nvidia-container-runtime/host-files-for-container.d/devices.csv \
+    --csv.file=/etc/nvidia-container-runtime/host-files-for-container.d/drivers.csv \
+    --csv.file=/etc/nvidia-container-runtime/host-files-for-container.d/l4t.csv \
+    --csv.file=/etc/nvidia-container-runtime/host-files-for-container.d/devices-wendyos.csv
 StandardOutput=journal
 StandardError=journal
 

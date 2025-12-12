@@ -1,5 +1,5 @@
-# WendyOS devices.csv - Additional device/sysfs mappings for containers
-# These are appended to the base devices.csv from meta-tegra
+# WendyOS devices-wendyos.csv - Additional device/sysfs mappings for containers
+# These supplement the base devices.csv from meta-tegra
 
 # Tegra platform information (required for GPU driver initialization)
 dir, /sys/devices/soc0
