@@ -1,0 +1,7 @@
+# Tegra platform information (required for GPU driver initialization)
+dir, /sys/devices/soc0
+dir, /sys/devices/soc1
+dir, /proc/device-tree
+
+# CPU information (for cpuinfo library)
+dir, /sys/devices/system/cpu
