@@ -7,7 +7,7 @@ inherit systemd
 
 SRC_URI = " \
     file://l4t.csv \
-    file://devices-platform.csv \
+    file://devices.csv \
     file://edgeos-cdi-generate.service \
     file://edgeos-cuda-detect.service \
     file://generate-cuda-env.sh \
@@ -23,7 +23,7 @@ do_install() {
     # Install CSV files to the NVIDIA container runtime config directory
     install -d ${D}${sysconfdir}/nvidia-container-runtime/host-files-for-container.d
     install -m 0644 ${WORKDIR}/l4t.csv ${D}${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/
-    install -m 0644 ${WORKDIR}/devices-platform.csv ${D}${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/
+    install -m 0644 ${WORKDIR}/devices.csv ${D}${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/
 
     # Install CUDA environment detection script
     install -d ${D}${bindir}
@@ -43,7 +43,7 @@ do_install() {
 }
 
 FILES:${PN} += "${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/l4t.csv"
-FILES:${PN} += "${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/devices-platform.csv"
+FILES:${PN} += "${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/devices.csv"
 FILES:${PN} += "${bindir}/generate-cuda-env.sh"
 FILES:${PN} += "${systemd_system_unitdir}/edgeos-cdi-generate.service"
 FILES:${PN} += "${systemd_system_unitdir}/edgeos-cuda-detect.service"
