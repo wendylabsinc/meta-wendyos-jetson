@@ -1,7 +1,7 @@
 [Unit]
 Description=EdgeOS Hostname Setup
-Wants=edgeos-uuid-generate.service edgeos-device-name-generate.service
-After=edgeos-uuid-generate.service edgeos-device-name-generate.service local-fs.target
+Wants=edgeos-uuid-generate.service edgeos-device-name-generate.service edgeos-etc-binds.service
+After=edgeos-uuid-generate.service edgeos-device-name-generate.service edgeos-etc-binds.service local-fs.target
 Before=avahi-daemon.service network.target
 
 [Service]

@@ -1,7 +1,8 @@
 [Unit]
 Description=EdgeOS Device UUID Generation
 DefaultDependencies=no
-After=local-fs.target
+After=local-fs.target data.mount edgeos-etc-binds.service
+Wants=edgeos-etc-binds.service
 
 [Service]
 Type=oneshot

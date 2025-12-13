@@ -97,13 +97,11 @@ set_hostname() {
 
     log "Setting hostname to ${new_hostname}"
 
-    if command -v hostnamectl >/dev/null 2>&1; then
-        hostnamectl set-hostname "${new_hostname}"
-        echo "${new_hostname}" > /etc/hostname
-    else
-        echo "${new_hostname}" > /etc/hostname
-        hostname "${new_hostname}"
-    fi
+    # Write directly to /etc/hostname instead of using hostnamectl
+    # Rationale: hostnamectl uses atomic rename() which fails with EBUSY if
+    # /etc/hostname were bind-mounted. Direct write works in all cases.
+    echo "${new_hostname}" > /etc/hostname
+    hostname "${new_hostname}"
 
     # Update /etc/hosts (idempotent)
     if [ -f /etc/hosts ]; then
