@@ -28,6 +28,7 @@ RDEPENDS:${PN} = " \
     avahi-utils \
     k3s-agent \
     edgeos-identity \
+    edgeos-etc-binds \
     edgeos-agent \
     edgeos-user \
     edgeos-motd \
