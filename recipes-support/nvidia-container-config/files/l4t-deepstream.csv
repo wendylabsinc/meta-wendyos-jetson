@@ -198,7 +198,8 @@ lib, /usr/local/cuda-12.6/lib/libcudla.so.1.0.0
 
 # DeepStream SDK 7.1 Libraries (only present if deepstream-7.1 is installed)
 # Environment variable for GStreamer to find DeepStream plugins
-env, GST_PLUGIN_PATH=/usr/lib/gstreamer-1.0/deepstream
+env, GST_PLUGIN_PATH=/usr/lib/aarch64-linux-gnu/gstreamer-1.0/deepstream
+env, LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream-7.1/lib
 
 # Mount entire library directory for DeepStream
 dir, /opt/nvidia/deepstream/deepstream-7.1/lib
