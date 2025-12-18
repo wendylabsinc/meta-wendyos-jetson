@@ -87,6 +87,7 @@ RDEPENDS:${PN} += "${@bb.utils.contains('EDGEOS_DEEPSTREAM', '1', ' \
     tegra-libraries-nvdsseimeta \
     libgstnvcustomhelper \
     yaml-cpp-070 \
+    tensorrt-trtexec-prebuilt \
     ', '', d)}"
 
 # Note: cuda-libraries likely includes:
