@@ -33,5 +33,7 @@ check_service "systemd-resolved" "DNS"
 check_service "usb-gadget" "USB Gadget"
 check_service "avahi-daemon" "mDNS"
 check_service "systemd-timesyncd" "Time Sync"
+check_service "edge-agent" "Edge Agent"
+check_service "wendyos-dev-registry" "Dev Registry"
 
 echo
