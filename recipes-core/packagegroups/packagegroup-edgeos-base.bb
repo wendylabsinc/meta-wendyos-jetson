@@ -32,6 +32,7 @@ RDEPENDS:${PN} = " \
     edgeos-agent \
     edgeos-user \
     edgeos-motd \
+    systemd-mount-containerd \
     "
 
 RDEPENDS:${PN}:append = " \
