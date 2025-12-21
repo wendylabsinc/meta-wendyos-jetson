@@ -52,6 +52,7 @@ main() {
     log "Generating CUDA environment file for version $cuda_ver"
 
     # Generate environment file
+    # Note: Yocto builds use /usr/local/cuda-X.X/lib/ (not lib64) and /usr/lib/ (not aarch64-linux-gnu)
     cat > "$ENV_FILE" << EOF
 # EdgeOS CUDA Environment Configuration
 # Auto-generated on $(date)
@@ -60,7 +61,7 @@ main() {
 CUDA_VER=$cuda_ver
 CUDA_HOME=/usr/local/cuda-$cuda_ver
 PATH=/usr/local/cuda-$cuda_ver/bin:\$PATH
-LD_LIBRARY_PATH=/usr/local/cuda-$cuda_ver/lib64:/usr/lib/aarch64-linux-gnu
+LD_LIBRARY_PATH=/usr/local/cuda-$cuda_ver/lib:/usr/lib
 EOF
 
     chmod 644 "$ENV_FILE"

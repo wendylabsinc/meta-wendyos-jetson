@@ -69,6 +69,18 @@ IMAGE_INSTALL += " \
 # Note: gadget-network-config (standalone dnsmasq) removed
 # NetworkManager's connection sharing provides DHCP via dnsmasq with DBus support
 
+# Enable DeepStream SDK support (optional - adds ~1GB to image)
+EDGEOS_DEEPSTREAM ?= "0"
+IMAGE_INSTALL += " \
+    ${@oe.utils.ifelse( \
+        d.getVar('EDGEOS_DEEPSTREAM') == '1', \
+            ' \
+                deepstream-7.1 \
+            ', \
+            '' \
+        )} \
+    "
+
 IMAGE_ROOTFS_SIZE ?= "8192"
 IMAGE_ROOTFS_EXTRA_SPACE:append = "${@bb.utils.contains("DISTRO_FEATURES", "systemd", " + 4096", "", d)}"
 
@@ -79,4 +91,5 @@ BUILDCFG_VARS += " \
     EDGEOS_DEBUG_UART \
     EDGEOS_USB_GADGET \
     EDGEOS_PERSIST_JOURNAL_LOGS \
+    EDGEOS_DEEPSTREAM \
     "
