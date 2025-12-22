@@ -49,6 +49,10 @@ IMAGE_INSTALL:append = " \
     wendyos-containerd-registry \
     wendyos-dev-registry-image \
     python3-pip-jetson-config \
+    bluez5 \
+    setup-nv-boot-control \
+    tegra-uefi-capsules \
+    mender-tegra-capsule-update \
     "
 
 # Enable USB peripheral (gadget) support

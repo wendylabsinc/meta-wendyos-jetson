@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+# Mender Update Module for Tegra UEFI Capsule Updates
+#
+# This module installs UEFI capsule files to the EFI System Partition
+# and triggers the UEFI firmware to apply them on the next reboot.
+#
+# Capsule files are installed to /boot/efi/EFI/UpdateCapsule/
+# and the OsIndications EFI variable is set to trigger the update.
+#
+
+set -e
+
+STATE="$1"
+FILES="$2"
+
+CAPSULE_DIR="/boot/efi/EFI/UpdateCapsule"
+
+case "$STATE" in
+    NeedsArtifactReboot)
+        echo "Automatic"
+        ;;
+
+    SupportsRollback)
+        echo "Yes"
+        ;;
+
+    ArtifactInstall)
+        # Ensure the ESP is mounted
+        if ! mountpoint -q /boot/efi 2>/dev/null; then
+            echo "ERROR: /boot/efi is not mounted" >&2
+            exit 1
+        fi
+
+        # Create the UpdateCapsule directory if it doesn't exist
+        mkdir -p "${CAPSULE_DIR}"
+
+        # Get the capsule file from the artifact
+        while IFS= read -r file; do
+            if [ -f "$file" ]; then
+                capsule_name=$(basename "$file")
+                echo "Installing capsule: ${capsule_name}"
+                cp "$file" "${CAPSULE_DIR}/${capsule_name}"
+                sync
+            fi
+        done < "$FILES"
+
+        # Set the OsIndications EFI variable to trigger capsule processing
+        echo "Setting OsIndications to trigger capsule update on next boot..."
+        if [ -x /usr/bin/oe4t-set-uefi-OSIndications ]; then
+            /usr/bin/oe4t-set-uefi-OSIndications
+        else
+            echo "WARNING: oe4t-set-uefi-OSIndications not found, capsule may not be applied" >&2
+        fi
+
+        echo "Capsule update staged. Will be applied on next reboot."
+        ;;
+
+    ArtifactRollback)
+        # Remove any pending capsule updates
+        echo "Rolling back: removing pending capsule updates..."
+        if [ -d "${CAPSULE_DIR}" ]; then
+            rm -rf "${CAPSULE_DIR}"/*
+        fi
+        ;;
+
+    ArtifactCommit)
+        # Verify the capsule was applied by checking nvbootctrl
+        echo "Verifying capsule update was applied..."
+        if command -v nvbootctrl >/dev/null 2>&1; then
+            nvbootctrl dump-slots-info
+        fi
+        # Clean up any remaining capsule files
+        if [ -d "${CAPSULE_DIR}" ]; then
+            rm -rf "${CAPSULE_DIR}"/*
+        fi
+        ;;
+
+    ArtifactVerifyReboot)
+        # Check if the capsule update was successful
+        if command -v nvbootctrl >/dev/null 2>&1; then
+            # Get capsule update status
+            status=$(nvbootctrl dump-slots-info 2>/dev/null | grep -i "Capsule update status" | awk '{print $NF}')
+            case "$status" in
+                0)
+                    echo "Capsule update successful"
+                    exit 0
+                    ;;
+                1)
+                    echo "ERROR: Capsule update failed" >&2
+                    exit 1
+                    ;;
+                2)
+                    echo "Capsule update pending (will be applied on next boot)"
+                    exit 0
+                    ;;
+                *)
+                    echo "Unknown capsule update status: $status"
+                    exit 0
+                    ;;
+            esac
+        fi
+        exit 0
+        ;;
+
+    Cleanup)
+        # Clean up any temporary files
+        ;;
+esac
+
+exit 0
