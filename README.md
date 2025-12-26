@@ -1,7 +1,16 @@
-
 # WendyOS for NVIDIA Jetson Orin Nano Developer Kit
 
 This repository provides the meta-layer and build flow to build **WendyOS** for the **NVIDIA Jetson Orin Nano Developer Kit**.
+
+## TL;DR
+
+```bash
+git clone git@github.com:wendylabsinc/meta-wendyos-jetson.git
+cd meta-wendyos-jetson
+make setup              # First-time setup (~10 min)
+make build              # Build the image (~2-4 hours first time, uses cache after)
+make flash-to-external  # Flash to external NVMe/USB drive
+```
 
 ## Table of Contents
 
@@ -34,15 +43,30 @@ This repository provides the meta-layer and build flow to build **WendyOS** for 
 
 ### Prerequisites
 
+**Common Requirements:**
 - Docker installed and running
 - Git
 - At least 100GB of free disk space
 - Reliable internet connection
-- The user under which the image is built must be added to `docker` group
 
-```bash
-$ sudo usermod -aG docker $USER
-```
+**Linux-specific:**
+- The user under which the image is built must be added to `docker` group:
+  ```bash
+  $ sudo usermod -aG docker $USER
+  ```
+
+**macOS-specific:**
+- [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) (version 4.0+ recommended)
+- Allocate sufficient resources in Docker Desktop settings:
+  - **Memory**: 8GB minimum (16GB+ recommended)
+  - **Disk**: 150GB minimum for build artifacts
+  - **CPUs**: 4+ cores recommended
+- Install GNU coreutils (optional, for older macOS versions):
+  ```bash
+  $ brew install coreutils
+  ```
+
+> **Note for macOS users**: The Yocto build runs inside a Docker container (Ubuntu 24.04 LTS), so macOS hosts can build just like Linux hosts. The build scripts automatically detect macOS and adjust Docker arguments accordingly.
 
 ### Directory Structure Requirements
 
@@ -60,16 +84,57 @@ Recommended structure:
 
 ### Steps to Build
 
+#### Option A: Using Make (Recommended)
+
+The easiest way to build is using the provided Makefile:
+
+```bash
+# Clone and enter the repository
+cd /path/to/project
+git clone git@github.com:wendylabsinc/meta-wendyos-jetson.git meta-wendyos
+cd meta-wendyos
+
+# First-time setup (clones repos, creates Docker image)
+make setup
+
+# Build the image
+make build
+
+# Or open an interactive shell for development
+make shell
+```
+
+**Available Make Targets:**
+| Target | Description |
+|--------|-------------|
+| `make setup` | First-time setup: clone repos, create Docker image |
+| `make build` | Build the complete WendyOS image |
+| `make deploy` | Copy tegraflash tarball from Docker volume to `./deploy/` (macOS only) |
+| `make flash-to-external` | Interactive flash to external NVMe/USB drive (macOS & Linux) |
+| `make build-sdk` | Build the SDK for application development |
+| `make shell` | Open interactive shell in build container |
+| `make clean` | Remove build artifacts (keeps downloads/sstate) |
+| `make distclean` | Remove everything including downloads |
+| `make help` | Show all available targets |
+
+**Build for different targets:**
+```bash
+# Build for NVMe (default)
+make build
+
+# Build for SD card
+make build MACHINE=jetson-orin-nano-devkit-edgeos
+```
+
+#### Option B: Manual Steps
+
 1. **Clone the repository** (or place it in your working directory):
    ```bash
    cd /path/to/project
-   git clone <repository-url> meta-wendyos
+   git clone git@github.com:wendylabsinc/meta-wendyos-jetson.git meta-wendyos
    cd meta-wendyos
    git checkout <branch>
    ```
-
-The repository URL is:
-`git@github.com:wendylabsinc/meta-wendyos-jetson.git`
 
 2. **Run the bootstrap script**:
 
@@ -586,6 +651,72 @@ In `build/conf/local.conf`:
 - **Boot Method**: UEFI with extlinux
 - **OTA System**: Mender v5.0.x
 - **Display Features**: Removed (headless embedded system)
+
+## Building on macOS
+
+### Overview
+
+Building WendyOS on macOS is fully supported through Docker Desktop. The build process runs inside an Ubuntu 24.04 LTS container, making it identical to building on a Linux host.
+
+### macOS-specific Considerations
+
+1. **Docker Desktop Resources**: Yocto builds are resource-intensive. Configure Docker Desktop with:
+   - At least 8GB RAM (16GB recommended)
+   - 4+ CPUs
+   - 150GB+ disk space
+
+2. **Build Performance**: Builds on macOS may be slower than native Linux due to:
+   - Docker's virtualization layer
+   - File system performance differences (VirtioFS is recommended in Docker Desktop settings)
+
+3. **Network Differences**: On macOS, `--network=host` doesn't work as it does on Linux. The build scripts automatically handle this by using Docker's default bridge networking, which is sufficient for the build process.
+
+4. **X11 Support**: X11 forwarding (for GUI tools like `devtool`) is not available by default on macOS. If needed, install XQuartz and configure it manually. However, Yocto command-line builds work without X11.
+
+### Flashing
+
+Use the interactive flash tool (works on both macOS and Linux):
+
+```bash
+make flash-to-external
+```
+
+This will:
+1. Create a flashable `.img` file (if not already created)
+2. List available external drives
+3. Prompt you to select the target disk
+   - macOS: e.g., `disk42`
+   - Linux: e.g., `sdb` or `nvme0n1`
+4. Flash the image and safely eject the drive
+
+**Non-interactive mode** (for scripting):
+```bash
+# macOS
+make flash-to-external FLASH_DEVICE=/dev/disk42 FLASH_CONFIRM=yes
+
+# Linux
+make flash-to-external FLASH_DEVICE=/dev/sdb FLASH_CONFIRM=yes
+```
+
+### Troubleshooting macOS Builds
+
+**Issue: Docker build fails with network errors**
+- Ensure Docker Desktop has internet access
+- Try restarting Docker Desktop
+
+**Issue: Build runs out of disk space**
+- Increase Docker Desktop disk allocation in Preferences → Resources
+- Clean up old images: `docker system prune -a`
+- Clear the Yocto sstate-cache if needed
+
+**Issue: Permission denied errors on mounted volumes**
+- Ensure the project directory is in a location Docker Desktop can access
+- Check Docker Desktop → Preferences → Resources → File Sharing
+
+**Issue: Build is very slow**
+- Use VirtioFS in Docker Desktop settings for better file system performance
+- Increase allocated CPUs and memory
+- Consider using a shared `sstate-cache` and `downloads` directory across builds
 
 ## License
 
