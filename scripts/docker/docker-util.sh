@@ -256,9 +256,14 @@ done
 }
 
 [ 1 -eq "${opts[remove]}" ] && {
-    printf "Remove Docker image... (%s:%s)\n" "${DOCKER_REPO}" "${DOCKER_TAG}"
-    docker image rm "${DOCKER_REPO}:${DOCKER_TAG}"
-    exit $?
+    if docker_image_exists "${DOCKER_REPO}" "${DOCKER_TAG}"; then
+        printf "Remove Docker image... (%s:%s)\n" "${DOCKER_REPO}" "${DOCKER_TAG}"
+        docker image rm "${DOCKER_REPO}:${DOCKER_TAG}"
+        exit $?
+    else
+        printf "Docker image not found (%s:%s), nothing to remove.\n" "${DOCKER_REPO}" "${DOCKER_TAG}"
+        exit 0
+    fi
 }
 
 if [[ 1 -eq "${opts[create]}" ]]
