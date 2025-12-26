@@ -40,6 +40,7 @@ IMAGE_INSTALL:append = " \
     packagegroup-edgeos-base \
     packagegroup-edgeos-kernel \
     packagegroup-edgeos-debug \
+    packagegroup-edgeos-audio \
     mender-esp \
     mender-configure \
     mender-connect \
