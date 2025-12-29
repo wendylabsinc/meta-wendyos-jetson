@@ -26,3 +26,8 @@ RDEPENDS:${PN}:append = " \
 RDEPENDS:${PN}:append = " \
     alsa-utils \
     "
+
+# PipeWire CLI utilities (pw-cli, pw-dump, etc.)
+RDEPENDS:${PN}:append = " \
+    pipewire-tools \
+    "
