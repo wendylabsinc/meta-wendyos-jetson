@@ -50,8 +50,15 @@ do_install:append() {
         </partition>' \
         ${WORKDIR}/${layout_file}.tmp1
 
+    # 3. Remove filename field from UDA partition (not used by EdgeOS)
+    #    UDA is kept for NVIDIA compatibility but should not have pre-written content
+    #    The filename field causes flash tools to fail during signing
+    sed -i '/<partition name="UDA"/,/<\/partition>/ {
+        /<filename>/d
+    }' ${WORKDIR}/${layout_file}.tmp1
+
     # Install the modified layout
     install -m 0644 ${WORKDIR}/${layout_file}.tmp1 ${layout_path}
 
-    bbnote "EdgeOS: Successfully added mender_data partition to ${layout_file}"
+    bbnote "EdgeOS: Successfully modified partition layout for NVMe (added mender_data, removed UDA filename)"
 }

@@ -20,6 +20,7 @@ RDEPENDS:${PN} = " \
     networkmanager-nmcli \
     vim \
     htop \
+    rpm \
     usbutils \
     tree \
     util-linux-fdisk \
@@ -32,6 +33,7 @@ RDEPENDS:${PN} = " \
     edgeos-agent \
     edgeos-user \
     edgeos-motd \
+    tegra-rcm-trigger \
     "
 
 RDEPENDS:${PN}:append = " \
