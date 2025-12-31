@@ -11,6 +11,7 @@ inherit packagegroup
 RDEPENDS:${PN} = " \
     pipewire \
     pipewire-alsa \
+    pipewire-modules-meta \
     pipewire-pulse \
     pipewire-spa-plugins-meta \
     wireplumber \
