@@ -8,3 +8,7 @@ dir, /proc/device-tree
 
 # CPU information (for cpuinfo library - fixes PyTorch initialization)
 dir, /sys/devices/system/cpu
+
+# PipeWire audio/video server sockets
+dir, /run/pipewire
+dir, /run/user/1000/pipewire
