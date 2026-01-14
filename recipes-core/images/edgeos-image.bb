@@ -49,6 +49,11 @@ IMAGE_INSTALL:append = " \
     wendyos-containerd-registry \
     wendyos-dev-registry-image \
     python3-pip-jetson-config \
+    bluez5 \
+    pipewire \
+    wireplumber \
+    pipewire-pulse \
+    pipewire-alsa \
     "
 
 # Enable USB peripheral (gadget) support
