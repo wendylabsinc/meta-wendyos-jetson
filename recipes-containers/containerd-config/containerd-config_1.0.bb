@@ -26,4 +26,5 @@ FILES:${PN} += "\
     ${docdir}/${PN}/README-memory-limits.md \
 "
 
-RDEPENDS:${PN} = "containerd"
+# Note: No RDEPENDS needed - this just provides config files
+# containerd-opencontainers will be pulled in by other packages (k3s-agent, etc.)
