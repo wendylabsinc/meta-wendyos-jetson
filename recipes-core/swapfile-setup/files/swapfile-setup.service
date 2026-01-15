@@ -1,0 +1,18 @@
+[Unit]
+Description=Setup swap file on data partition
+Documentation=man:swapon(8)
+# Ensure data partition is mounted and filesystem is fully expanded
+RequiresMountsFor=/data
+After=data.mount mender-systemd-growfs-data.service
+Before=swap.target
+DefaultDependencies=no
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/swapfile-setup.sh
+TimeoutSec=300
+
+[Install]
+WantedBy=swap.target

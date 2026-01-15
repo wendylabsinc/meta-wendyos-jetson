@@ -131,6 +131,10 @@ lib, /usr/lib/libnvidia-tls.so.540.4.0
 lib, /usr/lib/libnvidia-glcore.so.540.4.0
 lib, /usr/lib/libnvidia-glsi.so.540.4.0
 
+# VPI3 - Vision Programming Interface (computer vision acceleration)
+lib, /opt/nvidia/vpi3/lib/aarch64-linux-gnu/libnvvpi.so.3.2.4
+sym, /opt/nvidia/vpi3/lib/aarch64-linux-gnu/libnvvpi.so.3
+
 # Tegra-specific libraries (video processing) - in /usr/lib/ directly on Yocto
 sym, /usr/lib/libnvbufsurface.so
 sym, /usr/lib/libnvbufsurface.so.1

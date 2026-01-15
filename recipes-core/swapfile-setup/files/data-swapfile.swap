@@ -1,0 +1,14 @@
+[Unit]
+Description=/data/swapfile
+Documentation=man:systemd.swap(5)
+# Require swapfile-setup service to run first
+Requires=swapfile-setup.service
+After=swapfile-setup.service
+
+[Swap]
+What=/data/swapfile
+Options=sw
+Priority=-2
+
+[Install]
+WantedBy=swap.target
