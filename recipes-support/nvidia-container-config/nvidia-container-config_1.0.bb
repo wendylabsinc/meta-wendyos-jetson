@@ -35,6 +35,15 @@ do_install() {
     if [ "${EDGEOS_DEEPSTREAM}" = "1" ]; then
         bbnote "Installing DeepStream l4t-deepstream.csv"
         install -m 0644 ${WORKDIR}/l4t-deepstream.csv ${D}${sysconfdir}/nvidia-container-runtime/host-files-for-container.d/
+
+        # Create multiarch compatibility symlinks for GStreamer DeepStream plugins
+        # This allows the CDI GST_PLUGIN_PATH to work with both Yocto and Debian/Ubuntu conventions
+        install -d ${D}${libdir}/aarch64-linux-gnu/gstreamer-1.0
+        ln -sf ../../gstreamer-1.0/deepstream ${D}${libdir}/aarch64-linux-gnu/gstreamer-1.0/deepstream
+
+        # Create multiarch symlink for nvidia libraries (libgstnvcustomhelper.so, etc.)
+        install -d ${D}${libdir}/aarch64-linux-gnu
+        ln -sf ../nvidia ${D}${libdir}/aarch64-linux-gnu/nvidia
     fi
 
     # Install WendyOS device/sysfs mappings (supplements meta-tegra's devices.csv)
@@ -68,6 +77,10 @@ FILES:${PN} += "${bindir}/fix-cdi-gstreamer-paths.sh"
 FILES:${PN} += "${systemd_system_unitdir}/edgeos-cdi-generate.service"
 FILES:${PN} += "${systemd_system_unitdir}/edgeos-cuda-detect.service"
 FILES:${PN} += "${sysconfdir}/udev/rules.d/99-z-nvidia-tegra.rules"
+
+# Multiarch compatibility symlinks (only when DeepStream is enabled)
+FILES:${PN} += "${@bb.utils.contains('EDGEOS_DEEPSTREAM', '1', '${libdir}/aarch64-linux-gnu/gstreamer-1.0/deepstream', '', d)}"
+FILES:${PN} += "${@bb.utils.contains('EDGEOS_DEEPSTREAM', '1', '${libdir}/aarch64-linux-gnu/nvidia', '', d)}"
 
 # nvidia-container-toolkit is now available via meta-tegra virtualization layer
 RDEPENDS:${PN} = "nvidia-container-toolkit libnvidia-container bash"
