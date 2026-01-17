@@ -20,6 +20,7 @@ RDEPENDS:${PN} = " \
             sysstat \
             ldd \
             bc  \
+            python3-jetson-stats \
         ', \
         '' \
         )} \

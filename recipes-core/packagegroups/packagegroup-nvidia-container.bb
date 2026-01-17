@@ -51,7 +51,7 @@ inherit packagegroup
 # - nvidia-container-toolkit (nvidia-ctk for CDI generation)
 # - nvidia-container-runtime
 
-# Core packages required for l4t.csv container support
+# Core packages required for l4t.csv container support (always included)
 RDEPENDS:${PN} = " \
     nvidia-container-config \
     nvidia-container-toolkit \
@@ -63,17 +63,32 @@ RDEPENDS:${PN} = " \
     cuda-nvrtc \
     cuda-nvtx \
     cuda-cupti \
+    tegra-libraries-core \
     tegra-libraries-cuda \
     tegra-libraries-multimedia \
     tegra-libraries-multimedia-utils \
+    tegra-libraries-multimedia-v4l \
     tegra-libraries-nvsci \
     tegra-libraries-camera \
+    tegra-libraries-eglcore \
+    tegra-libraries-glescore \
     cudnn \
     cusparselt \
     tensorrt-core \
     tensorrt-plugins \
     libcufile \
     "
+
+# DeepStream-specific packages (only when EDGEOS_DEEPSTREAM=1)
+# These provide libraries needed by DeepStream GStreamer plugins
+EDGEOS_DEEPSTREAM ?= "0"
+RDEPENDS:${PN} += "${@bb.utils.contains('EDGEOS_DEEPSTREAM', '1', ' \
+    tegra-libraries-multimedia-ds \
+    tegra-libraries-nvdsseimeta \
+    libgstnvcustomhelper \
+    yaml-cpp-070 \
+    tensorrt-trtexec-prebuilt \
+    ', '', d)}"
 
 # Note: cuda-libraries likely includes:
 #  - cuBLAS (cublas, cublasLt)

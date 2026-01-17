@@ -33,6 +33,8 @@ RDEPENDS:${PN} = " \
     edgeos-user \
     edgeos-motd \
     systemd-mount-containerd \
+    swapfile-setup \
+    containerd-config \
     "
 
 RDEPENDS:${PN}:append = " \
