@@ -11,7 +11,7 @@ dir, /sys/devices/system/cpu
 
 # tegrastats monitoring tool support
 bin, /usr/bin/tegrastats
-dir, /sys/devices/platform/gpu.0
+dir, /sys/devices/platform/bus@0/17000000.gpu
 dir, /sys/class/thermal
 file, /etc/nv_tegra_release
 
