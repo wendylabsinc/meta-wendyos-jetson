@@ -35,6 +35,7 @@ RDEPENDS:${PN} = " \
     systemd-mount-containerd \
     swapfile-setup \
     containerd-config \
+    tegra-tools-tegrastats \
     "
 
 RDEPENDS:${PN}:append = " \
