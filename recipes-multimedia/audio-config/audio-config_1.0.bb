@@ -38,6 +38,7 @@ FILES:${PN} += " \
 
 # Runtime dependencies
 RDEPENDS:${PN} = " \
+    bash \
     pipewire \
     wireplumber \
     pipewire-pulse \
