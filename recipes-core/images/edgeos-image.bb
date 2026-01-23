@@ -34,6 +34,7 @@ TEGRA_BOOTCONTROL_OVERLAYS += "boot-priority.dtbo"
 IMAGE_FEATURES += " \
     ssh-server-openssh \
     debug-tweaks \
+    package-management \
     "
 
 IMAGE_INSTALL:append = " \
@@ -50,10 +51,13 @@ IMAGE_INSTALL:append = " \
     wendyos-dev-registry-image \
     python3-pip-jetson-config \
     bluez5 \
+    bluez5-obex \
     pipewire \
     wireplumber \
     pipewire-pulse \
     pipewire-alsa \
+    rtkit \
+    audio-config \
     "
 
 # Enable USB peripheral (gadget) support

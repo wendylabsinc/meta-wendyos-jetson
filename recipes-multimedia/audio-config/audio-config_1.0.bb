@@ -1,0 +1,56 @@
+SUMMARY = "Audio and Bluetooth Configuration for WendyOS"
+DESCRIPTION = "Configures PipeWire, WirePlumber, and BlueZ for out-of-the-box Bluetooth audio support"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
+
+inherit systemd allarch
+
+SRC_URI = " \
+    file://pipewire-user-setup.service \
+    file://pipewire-user-setup.sh \
+    file://95-pipewire.preset \
+"
+
+S = "${WORKDIR}"
+
+SYSTEMD_SERVICE:${PN} = "pipewire-user-setup.service"
+SYSTEMD_AUTO_ENABLE:${PN} = "enable"
+
+do_install() {
+    # Install user service enablement script (runs at boot to enable per-user services)
+    install -d ${D}${sbindir}
+    install -m 0755 ${WORKDIR}/pipewire-user-setup.sh ${D}${sbindir}/
+
+    # Install systemd service to enable audio for edge user
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/pipewire-user-setup.service ${D}${systemd_system_unitdir}/
+
+    # Install systemd user preset to auto-enable PipeWire/WirePlumber
+    install -d ${D}${systemd_unitdir}/user-preset
+    install -m 0644 ${WORKDIR}/95-pipewire.preset ${D}${systemd_unitdir}/user-preset/
+}
+
+FILES:${PN} += " \
+    ${sbindir}/pipewire-user-setup.sh \
+    ${systemd_system_unitdir}/pipewire-user-setup.service \
+    ${systemd_unitdir}/user-preset/95-pipewire.preset \
+"
+
+# Runtime dependencies
+RDEPENDS:${PN} = " \
+    pipewire \
+    wireplumber \
+    pipewire-pulse \
+    pipewire-alsa \
+    pipewire-spa-plugins \
+    pipewire-spa-tools \
+    pipewire-modules \
+    pipewire-tools \
+    bluez5 \
+    bluez5-obex \
+    dbus \
+    rtkit \
+    alsa-utils \
+    alsa-plugins \
+    alsa-lib \
+"
