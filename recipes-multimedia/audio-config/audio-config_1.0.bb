@@ -49,8 +49,11 @@ RDEPENDS:${PN} = " \
     bluez5 \
     bluez5-obex \
     dbus \
-    rtkit \
     alsa-utils \
     alsa-plugins \
     alsa-lib \
 "
+
+# rtkit provides real-time priority for audio, but requires polkit
+# Add it if polkit is enabled in distro features
+RDEPENDS:${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'polkit', 'rtkit', '', d)}"
