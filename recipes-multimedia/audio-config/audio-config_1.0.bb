@@ -43,9 +43,7 @@ RDEPENDS:${PN} = " \
     wireplumber \
     pipewire-pulse \
     pipewire-alsa \
-    pipewire-spa-plugins \
     pipewire-spa-tools \
-    pipewire-modules \
     pipewire-tools \
     bluez5 \
     bluez5-obex \
