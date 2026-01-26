@@ -9,6 +9,9 @@ SRC_URI = " \
     file://pipewire-user-setup.service \
     file://pipewire-user-setup.sh \
     file://95-pipewire.preset \
+    file://50-wireplumber-headless.conf \
+    file://wireplumber-bluetooth.conf \
+    file://wireplumber-dbus.conf \
 "
 
 S = "${WORKDIR}"
@@ -28,12 +31,33 @@ do_install() {
     # Install systemd user preset to auto-enable PipeWire/WirePlumber
     install -d ${D}${systemd_unitdir}/user-preset
     install -m 0644 ${WORKDIR}/95-pipewire.preset ${D}${systemd_unitdir}/user-preset/
+
+    # Install WirePlumber configuration for headless Bluetooth
+    # Disables seat monitoring so Bluetooth works without a display server
+    install -d ${D}${sysconfdir}/wireplumber/wireplumber.conf.d
+    install -m 0644 ${WORKDIR}/50-wireplumber-headless.conf \
+        ${D}${sysconfdir}/wireplumber/wireplumber.conf.d/
+
+    # Install D-Bus policy for Bluetooth access
+    # Allows edge user to communicate with BlueZ over D-Bus
+    install -d ${D}${sysconfdir}/dbus-1/system.d
+    install -m 0644 ${WORKDIR}/wireplumber-bluetooth.conf \
+        ${D}${sysconfdir}/dbus-1/system.d/
+
+    # Install WirePlumber systemd service drop-in
+    # Sets D-Bus environment so WirePlumber can find the session bus
+    install -d ${D}${systemd_unitdir}/user/wireplumber.service.d
+    install -m 0644 ${WORKDIR}/wireplumber-dbus.conf \
+        ${D}${systemd_unitdir}/user/wireplumber.service.d/dbus.conf
 }
 
 FILES:${PN} += " \
     ${sbindir}/pipewire-user-setup.sh \
     ${systemd_system_unitdir}/pipewire-user-setup.service \
     ${systemd_unitdir}/user-preset/95-pipewire.preset \
+    ${sysconfdir}/wireplumber/wireplumber.conf.d/50-wireplumber-headless.conf \
+    ${sysconfdir}/dbus-1/system.d/wireplumber-bluetooth.conf \
+    ${systemd_unitdir}/user/wireplumber.service.d/dbus.conf \
 "
 
 # Runtime dependencies
