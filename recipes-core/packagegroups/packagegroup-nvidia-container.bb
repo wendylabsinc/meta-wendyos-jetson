@@ -34,6 +34,10 @@ inherit packagegroup
 # cuSPARSELt (Lightweight sparse operations):
 # - libcusparselt0
 #
+# Note: cuDSS (Direct sparse linear solver - required by PyTorch 2.8+) is NOT
+# included in the base OS. Install it in containers via pip when needed:
+#   pip install nvidia-cudss-cu12
+#
 # TensorRT (Inference optimization):
 # - libnvinfer10
 # - libnvinfer-plugin10
