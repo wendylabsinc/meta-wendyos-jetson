@@ -25,6 +25,14 @@ lib, /usr/local/cuda-12.6/lib/libcudart.so.12.6.68
 # CUDA Headers (required for building/JIT compilation - needed by triton, torch.compile, etc.)
 dir, /usr/local/cuda-12.6/include
 
+# CUDA Binaries (required for JIT compilation - nvcc, ptxas, nvlink, etc.)
+# Triton engine and torch.compile need ptxas for PTX assembly compilation
+dir, /usr/local/cuda-12.6/bin
+
+# CUDA NVVM (NVIDIA LLVM compiler infrastructure)
+# Contains cicc (CUDA intermediate compiler) and libdevice (device intrinsics)
+dir, /usr/local/cuda-12.6/nvvm
+
 # cuBLAS - Linear algebra (REQUIRED by PyTorch)
 sym, /usr/local/cuda-12.6/lib/libcublas.so.12
 lib, /usr/local/cuda-12.6/lib/libcublas.so.12.6.1.4
