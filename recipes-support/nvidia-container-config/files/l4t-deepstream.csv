@@ -176,6 +176,9 @@ sym, /usr/lib/libcuda.so
 sym, /usr/lib/libcuda.so.1
 lib, /usr/lib/libcuda.so.1.1
 
+# NUMA library (required by some CUDA/PyTorch builds for memory locality)
+lib, /usr/lib/libnuma.so.1
+
 # TensorRT - Inference optimization (required by torch-tensorrt)
 sym, /usr/lib/libnvinfer.so
 sym, /usr/lib/libnvinfer.so.10
