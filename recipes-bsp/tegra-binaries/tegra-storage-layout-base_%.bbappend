@@ -50,6 +50,15 @@ do_install:append() {
         </partition>' \
         ${WORKDIR}/${layout_file}.tmp1
 
+    # 3. Remove DATAFILE filename from UDA partition
+    #    Prevent flash error when dataimg is larger than UDA partition
+    #    UDA is not used by EdgeOS (mender_data is used instead)
+    #    UDA is kept for NVIDIA compatibility but should not have pre-written content
+    #    The filename field causes flash tools to fail during signing
+    sed -i '/<partition name="UDA"/,/<\/partition>/ {
+        /<filename>/d
+    }' ${WORKDIR}/${layout_file}.tmp1
+
     # Install the modified layout
     install -m 0644 ${WORKDIR}/${layout_file}.tmp1 ${layout_path}
 
