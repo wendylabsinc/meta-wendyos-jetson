@@ -50,6 +50,7 @@ IMAGE_INSTALL:append = " \
     wendyos-containerd-registry \
     wendyos-dev-registry-image \
     python3-pip-jetson-config \
+    setup-nv-boot-control \
     bluez5 \
     bluez5-obex \
     pipewire \
@@ -58,6 +59,22 @@ IMAGE_INSTALL:append = " \
     pipewire-alsa \
     rtkit \
     audio-config \
+    "
+
+# Note: mender-tegra-capsule-update removed - capsule staging now handled
+# by switch-rootfs state script for atomic rootfs+bootloader updates
+
+# Conditional UEFI capsule package installation
+# Controlled by EDGEOS_UPDATE_BOOTLOADER (defined in conf/distro/edgeos.conf)
+IMAGE_INSTALL += " \
+    ${@oe.utils.ifelse( \
+        d.getVar('EDGEOS_UPDATE_BOOTLOADER') == '1', \
+            ' \
+                tegra-uefi-capsules \
+                bootloader-update \
+            ', \
+            '' \
+        )} \
     "
 
 # Enable USB peripheral (gadget) support
@@ -100,5 +117,6 @@ BUILDCFG_VARS += " \
     EDGEOS_DEBUG_UART \
     EDGEOS_USB_GADGET \
     EDGEOS_PERSIST_JOURNAL_LOGS \
+    EDGEOS_UPDATE_BOOTLOADER \
     EDGEOS_DEEPSTREAM \
     "

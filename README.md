@@ -3,6 +3,29 @@
 
 This repository provides the meta-layer and build flow to build **WendyOS** for the **NVIDIA Jetson Orin Nano Developer Kit**.
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Directory Structure Requirements](#directory-structure-requirements)
+  - [Steps to Build](#steps-to-build)
+  - [Flash the SD Card or NVMe](#flash-the-sd-card-or-nvme)
+  - [Available Images](#available-images)
+- [Mender OTA Updates](#mender-ota-updates)
+  - [Partition Layout](#partition-layout)
+  - [Manual Update](#manual-update)
+  - [Mender Server Update](#mender-server-update)
+    - [Setting Up Mender Server](#setting-up-mender-server)
+    - [Device Configuration](#device-configuration)
+    - [Deploy an Update](#deploy-an-update)
+    - [Mender Configuration](#mender-configuration)
+    - [Tear Down Server](#tear-down-server)
+- [Advanced Configuration](#advanced-configuration)
+  - [Custom Variables in bootstrap.sh](#custom-variables-in-bootstrapsh)
+  - [Build Configuration Variables](#build-configuration-variables)
+- [Architecture Notes](#architecture-notes)
+- [License](#license)
+
 ## Quick Start
 
 ### Prerequisites
@@ -213,7 +236,53 @@ The system includes Mender for Over-The-Air updates with A/B partition redundanc
 - `/dev/nvme0n1p15` - UDA partition (NVIDIA reserved, not used by EdgeOS)
 - `/dev/nvme0n1p17` - Mender data partition (expandable, mounted at `/data`)
 
-### Setting Up Mender Server
+### Manual Update
+
+For testing or offline updates, you can manually install a `.mender` artifact without a Mender server:
+
+**1. Transfer the artifact to the device:**
+
+```bash
+scp edgeos-image-*.mender root@<device-ip>:/tmp/
+```
+
+**2. Install the update:**
+
+```bash
+ssh root@<device-ip>
+sudo mender-update install /tmp/edgeos-image-*.mender
+```
+
+**3. Reboot to apply:**
+
+```bash
+sudo reboot
+```
+
+**4. Verify the update:**
+
+After reboot, check the new version:
+
+```bash
+cat /etc/os-release | grep VERSION_ID
+mender-update show-artifact
+```
+
+**5. Commit the update:**
+
+If the system boots successfully and you're satisfied with the new version:
+
+```bash
+sudo mender-update commit
+```
+
+**Note:** If you don't commit, Mender will automatically roll back to the previous version on the next reboot.
+
+### Mender Server Update
+
+For production deployments, use the Mender server for centralized OTA update management.
+
+#### Setting Up Mender Server
 
 #### 1. Install Dependencies
 
@@ -259,13 +328,13 @@ docker compose ps
 docker compose logs -f api-gateway deployments deviceauth
 ```
 
-### Device Configuration
+#### Device Configuration
 
 The Mender client on the Jetson device is pre-configured to connect to `https://docker.mender.io`. Ensure the `/etc/hosts` entry is set (see step 3 above).
 
 The server's TLS certificate is already included in the image at `/etc/mender/server.crt`.
 
-### Deploy an Update
+#### Deploy an Update
 
 1. Open https://docker.mender.io/ in your browser
 2. Log in with `admin@docker.mender.io` / `password123`
@@ -274,14 +343,14 @@ The server's TLS certificate is already included in the image at `/etc/mender/se
 5. Create a deployment under **Deployments → Create deployment**
 6. Monitor the update progress on the device
 
-### Mender Configuration
+#### Mender Configuration
 
 - **Server URL**: `https://docker.mender.io`
 - **Update poll interval**: 30 minutes
 - **Inventory poll interval**: 8 hours
 - **Artifact naming**: `${IMAGE_BASENAME}-${MACHINE}-${IMAGE_VERSION_SUFFIX}`
 
-### Tear Down Server
+#### Tear Down Server
 
 ```bash
 # Stop and remove containers + volumes (wipes all data)
@@ -291,23 +360,6 @@ docker compose down -v
 cd <server_dir>/..
 rm -rf mender-server
 ```
-
-#### Jetson
-
-```bash
-$ echo '<mender server IP> docker.mender.io s3.docker.mender.io' | sudo tee -a /etc/hosts
-```
-
-The server’s TLS cert for the client to trust (self-signed demo cert!) has to be already present on the device.
-
-#### Mender Web UI
-
-From any browser that resolves the same hostnames (the server should also have the hosts lines):
-- Open https://docker.mender.io/ (according to the demo configuration done on both, server and target)
-- Log in with the creaged user (e.g., admin@docker.mender.io / password123)
-- Go to Devices → Pending and Accept your Jetson
-- Upload a .mender artifact under Artifacts, then Deployments → Create deployment
-
 
 ## Advanced Configuration
 
