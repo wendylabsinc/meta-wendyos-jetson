@@ -18,7 +18,10 @@ file, /sys/devices/platform/gpu.0/load
 dir, /sys/devices/platform/gpu.0/devfreq
 
 # Thermal zones for temperature monitoring
+# Note: /sys/class/thermal contains symlinks to /sys/devices/virtual/thermal
+# so we must mount both for the symlinks to work in containers
 dir, /sys/class/thermal
+dir, /sys/devices/virtual/thermal
 
 # Tegra release info
 file, /etc/nv_tegra_release
