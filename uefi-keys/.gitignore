@@ -1,0 +1,10 @@
+# Private keys - NEVER commit these
+*.key
+
+# Temporary files
+*.csr
+*.old
+*.bak
+
+# Generated DTBO files (can be regenerated)
+*.dtbo
