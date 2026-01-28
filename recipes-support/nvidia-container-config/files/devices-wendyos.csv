@@ -10,11 +10,38 @@ dir, /proc/device-tree
 dir, /sys/devices/system/cpu
 
 # tegrastats monitoring tool support
-bin, /usr/bin/tegrastats
-dir, /sys/devices/platform/bus@0/17000000.gpu
+lib, /usr/bin/tegrastats
+
+# GPU monitoring files (explicit files for principle of least privilege)
+# Using gpu.0 symlink for portability across Orin Nano/AGX devices
+file, /sys/devices/platform/gpu.0/load
+dir, /sys/devices/platform/gpu.0/devfreq
+
+# Thermal zones for temperature monitoring
 dir, /sys/class/thermal
+
+# Tegra release info
 file, /etc/nv_tegra_release
 
-# PipeWire audio/video server sockets
-dir, /run/pipewire
+# Audio stack - Complete audio/Bluetooth support for containers
+# Containers need both low-level (ALSA) and high-level (PipeWire/Pulse) access
+
+# ALSA device nodes (direct hardware access - needed for some apps)
+dir, /dev/snd
+
+# ALSA configuration and plugins
+file, /etc/asound.conf
+dir, /usr/share/alsa
+
+# PipeWire runtime sockets (preferred - modern audio routing)
+dir, /run/user/1000
 dir, /run/user/1000/pipewire
+dir, /run/user/1000/pulse
+
+# D-Bus session bus (required for Bluetooth device control)
+dir, /run/dbus
+dir, /run/user/1000/bus
+
+# PipeWire libraries and plugins (needed for containers to load PipeWire modules)
+dir, /usr/lib/pipewire-0.3
+dir, /usr/share/pipewire

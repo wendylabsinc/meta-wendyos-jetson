@@ -34,6 +34,7 @@ TEGRA_BOOTCONTROL_OVERLAYS += "boot-priority.dtbo"
 IMAGE_FEATURES += " \
     ssh-server-openssh \
     debug-tweaks \
+    package-management \
     "
 
 IMAGE_INSTALL:append = " \
@@ -51,10 +52,13 @@ IMAGE_INSTALL:append = " \
     python3-pip-jetson-config \
     setup-nv-boot-control \
     bluez5 \
+    bluez5-obex \
     pipewire \
     wireplumber \
     pipewire-pulse \
     pipewire-alsa \
+    rtkit \
+    audio-config \
     "
 
 # Note: mender-tegra-capsule-update removed - capsule staging now handled
