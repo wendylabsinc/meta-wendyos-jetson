@@ -96,7 +96,11 @@ IMAGE_INSTALL += " \
 # NetworkManager's connection sharing provides DHCP via dnsmasq with DBus support
 
 # Enable DeepStream SDK support (optional - adds ~1GB to image)
-EDGEOS_DEEPSTREAM ?= "0"
+# Also enables l4t-deepstream.csv which provides:
+# - GPU device nodes (/dev/nvhost-*) for tegrastats and GPU monitoring
+# - CUDA compilation toolchain (headers, binaries, nvvm) for Triton/JIT
+# - Additional libraries (libnuma) and monitoring paths
+EDGEOS_DEEPSTREAM ?= "1"
 IMAGE_INSTALL += " \
     ${@oe.utils.ifelse( \
         d.getVar('EDGEOS_DEEPSTREAM') == '1', \
