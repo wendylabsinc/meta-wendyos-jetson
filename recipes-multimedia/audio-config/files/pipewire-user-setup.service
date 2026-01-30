@@ -1,0 +1,12 @@
+[Unit]
+Description=Enable PipeWire Audio for Edge User
+After=multi-user.target
+ConditionPathExists=/home/edge
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/pipewire-user-setup.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
