@@ -1,6 +1,8 @@
 [Unit]
 Description=Enable PipeWire Audio for Edge User
-After=multi-user.target
+After=multi-user.target home.mount edgeos-user-setup.service
+Requires=home.mount
+Wants=edgeos-user-setup.service
 ConditionPathExists=/home/edge
 
 [Service]
