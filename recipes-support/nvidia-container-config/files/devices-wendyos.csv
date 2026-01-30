@@ -9,9 +9,6 @@ dir, /proc/device-tree
 # CPU information (for cpuinfo library - fixes PyTorch initialization)
 dir, /sys/devices/system/cpu
 
-# tegrastats monitoring tool support
-lib, /usr/bin/tegrastats
-
 # GPU monitoring files (explicit files for principle of least privilege)
 # Using gpu.0 symlink for portability across Orin Nano/AGX devices
 file, /sys/devices/platform/gpu.0/load
