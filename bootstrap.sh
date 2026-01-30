@@ -68,14 +68,22 @@ cleanup() {
 }
 trap cleanup EXIT
 
+SRCREV_POKY="353491479086e8d3f209d5cce0019a29e143b064"
+SRCREV_OE="2759d8870ea387b76c902070bed8a6649ff47b56"
+SRCREV_TEGRA="447c21467f65be2389f68a189b6871f13729d222"
+SRCREV_TEGRA_COMM="241d1073ba8e610ef8da3fe8470b0a4d0567521f"
+SRCREV_VIRT="f92518e20530edfebca45e4170e11460949a5303"
+SRCREV_MENDER="76404a7b914676a57d76ccb5fe12149112c05c03"
+SRCREV_MENDER_COMM="9145b8e34bac23c82984ddcdd5468154ffe7af6d"
+
 declare -Ar repos=(
-    [0]="1|git://git.yoctoproject.org/poky.git||${YOCTO_BRANCH}"
-    [1]="1|https://github.com/openembedded/meta-openembedded.git||${YOCTO_BRANCH}"
-    [2]="1|https://github.com/OE4T/meta-tegra.git||${YOCTO_BRANCH}"
-    [3]="1|https://github.com/OE4T/meta-tegra-community||${YOCTO_BRANCH}"
-    [4]="1|git://git.yoctoproject.org/meta-virtualization.git||${YOCTO_BRANCH}"
-    [5]="1|https://github.com/mendersoftware/meta-mender.git||${YOCTO_BRANCH}"
-    [6]="1|https://github.com/mendersoftware/meta-mender-community.git||${YOCTO_BRANCH}"
+    [0]="1|git://git.yoctoproject.org/poky.git||${SRCREV_POKY}"
+    [1]="1|https://github.com/openembedded/meta-openembedded.git||${SRCREV_OE}"
+    [2]="1|https://github.com/OE4T/meta-tegra.git||${SRCREV_TEGRA}"
+    [3]="1|https://github.com/OE4T/meta-tegra-community||${SRCREV_TEGRA_COMM}"
+    [4]="1|git://git.yoctoproject.org/meta-virtualization.git||${SRCREV_VIRT}"
+    [5]="1|https://github.com/mendersoftware/meta-mender.git||${SRCREV_MENDER}"
+    [6]="1|https://github.com/mendersoftware/meta-mender-community.git||${SRCREV_MENDER_COMM}"
 )
 
 
@@ -83,7 +91,7 @@ declare -Ar repos=(
 # display help
 usage() {
     cat <<EOF
-  $(basename "$0") [options]
+  $(basename "${0}") [options]
 
 Options:
 
@@ -91,7 +99,7 @@ EOF
 }
 
 trim() {
-    local s="$1"
+    local s="${1}"
 
     # remove leading whitespace
     s="${s#"${s%%[![:space:]]*}"}"
@@ -103,8 +111,8 @@ trim() {
 }
 
 invalid_folder_structure() {
-    local -r work_dir="$1"
-    local -r meta_dir="$2"
+    local -r work_dir="${1}"
+    local -r meta_dir="${2}"
 
     cat <<EOF >&2
 ERROR: 'meta-${IMAGE_NAME}' must be located within the working directory subtree.
@@ -154,45 +162,104 @@ validate_meta_location() {
 }
 
 ###
+# Resolve a git ref (branch, tag, or commit) to its commit hash
+# Works with local refs, remote refs, or returns the input if already a hash
+resolve_ref() {
+    local ref="${1}"
+    local resolved
+
+    if resolved=$(git rev-parse --verify "${ref}" 2>/dev/null); then
+        echo "${resolved}"
+    elif resolved=$(git rev-parse --verify "origin/${ref}" 2>/dev/null); then
+        echo "${resolved}"
+    else
+        # assume it's already a commit hash
+        echo "${ref}"
+    fi
+}
+
+###
 function clone_repos() {
     for repo in "${repos[@]}"
     do
-        local enable=$(echo "${repo}" | cut -d'|'  -f 1)
+        local enable
+        local url
+        local folder
+        local srcrev
+
+        enable=$(echo "${repo}" | cut -d'|'  -f 1)
         [ "${enable}" -ne 1 ] && {
             continue
         }
 
-        local url=$(echo "${repo}" | cut -d'|'  -f 2)
-        # url=$(eval echo "${url}")
-
-        local folder=$(echo "${repo}" | cut -d'|'  -f 3)
-        # folder=$(eval echo "${folder}")
+        url=$(echo "${repo}" | cut -d'|'  -f 2)
+        folder=$(echo "${repo}" | cut -d'|'  -f 3)
         [[ -z "${folder}" ]] && {
             folder=$(basename "${url%.git}")
         }
 
-        local branch=$(echo "${repo}" | cut -d'|'  -f 4)
-        # branch=$(eval echo "${branch}")
-        [[ -z "${branch}" ]] && {
-            printf "No branch for '%s'\n" "${url}"
-            exit 1
-        }
-
-        [[ -d "./${folder}" ]] && {
-            printf "[skip] '%s'\n" "${url}"
-            continue
-        }
-
-        printf "[%s] '%s'\n" "${branch}" "${url}"
-        git clone -b "${branch}" "${url}" "${folder}" >> "${LOG_FILE}" 2>&1 || {
+        srcrev=$(echo "${repo}" | cut -d'|'  -f 4)
+        [[ -z "${srcrev}" ]] && {
+            printf "No SRCREV for '%s'\n" "${url}"
             return 1
         }
+
+        # check if repo already exists
+        if [[ -d "./${folder}" ]]; then
+            # repo exists - verify it's at the correct revision
+            cd "${folder}"
+
+            # fetch latest refs from remote
+            git fetch origin >> "${LOG_FILE}" 2>&1 || {
+                printf "[error] Failed to fetch '%s'\n" "${folder}"
+                cd ..
+                return 1
+            }
+
+            # check if the repo is already at target revision
+            local target_commit
+            local current_head
+
+            target_commit=$(resolve_ref "${srcrev}")
+            current_head=$(git rev-parse HEAD 2>/dev/null) || {
+                printf "[error] Cannot determine HEAD in '%s'\n" "${folder}"
+                cd ..
+                return 1
+            }
+
+            if [[ "${current_head}" == "${target_commit}" ]]; then
+                #already at correct revision - skip
+                printf "[ok] '%s' at %s\n" "${folder}" "${srcrev}"
+                cd ..
+                continue
+            fi
+
+            # need to update to target revision
+            printf "[update] '%s' to %s\n" "${folder}" "${srcrev}"
+        else
+            # repo doesn't exist - clone it
+            printf "[clone] '%s' at %s\n" "${url}" "${srcrev}"
+            git clone "${url}" "${folder}" >> "${LOG_FILE}" 2>&1 || {
+                return 1
+            }
+
+            cd "${folder}"
+        fi
+
+        # we need to checkout (either new clone or update)
+        git checkout "${srcrev}" >> "${LOG_FILE}" 2>&1 || {
+            printf "[error] Failed to checkout %s in '%s'\n" "${srcrev}" "${folder}"
+            cd ..
+            return 1
+        }
+
+        cd ..
     done
 }
 
 copy_dir() {
-    local src="$1"
-    local dst="$2"
+    local src="${1}"
+    local dst="${2}"
 
     if [ -z "${src}" ] || [ -z "${dst}" ]; then
         echo "Usage: copy_dir <source_dir> <dest_dir>" >&2
