@@ -13,10 +13,10 @@ SRC_URI = " \
 
 # Create edge user - simplified group list (non-existent groups cause failures)
 USERADD_PACKAGES = "${PN}"
-# Password 'edge' hash generated with: openssl passwd -6 -salt 5ixFr0sKRtsKKKhY edge
+# Password 'wendy' hash generated with: openssl passwd -6 -salt 5ixFr0sKRtsKKKhY wendy
 # NOTE: useradd with -m flag will try to create home, but since /home is bind-mounted
 # from /data/home, the actual initialization happens via first-boot service
-USERADD_PARAM:${PN} = "-m -d /home/edge -s /bin/bash -G dialout,video,audio,users -p '\$6\$5ixFr0sKRtsKKKhY\$NBU4Np0LBKjFMFZ5BpJr8wLT5UvTpY1cVFGdUWMCs0m4UDGMTHlU2efR6Qfwq5BMtCq8wqN.RoZH/vEt/cuyE1' edge"
+USERADD_PARAM:${PN} = "-m -d /home/edge -s /bin/bash -G dialout,video,audio,users -p '\$6\$5ixFr0sKRtsKKKhY\$5SyCVB9y95JEITWZ8AMcMCrMF4Rvq97ymUjEoUCBKfTl7vWHjTLEboowxWF6hIJgBUMOnJQfeIRPPwYCUaIwm.' edge"
 
 SYSTEMD_SERVICE:${PN} = "edgeos-user-setup.service"
 SYSTEMD_AUTO_ENABLE = "enable"
