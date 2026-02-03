@@ -25,5 +25,5 @@ do_configure:prepend() {
     fi
 
     # Log that we're using custom security keys
-    bbnote "Using EdgeOS UEFI security keys for capsule update authentication"
+    bbnote "Using WendyOS UEFI security keys for capsule update authentication"
 }

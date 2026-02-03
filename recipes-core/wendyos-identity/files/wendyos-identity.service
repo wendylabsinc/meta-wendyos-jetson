@@ -1,0 +1,15 @@
+[Unit]
+Description=WendyOS mDNS Setup
+After=network.target wendyos-usbgadget.service wendyos-uuid-generate.service wendyos-device-name-generate.service wendyos-etc-binds.service
+Before=avahi-daemon.service
+Wants=wendyos-etc-binds.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/update-mdns-uuid.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

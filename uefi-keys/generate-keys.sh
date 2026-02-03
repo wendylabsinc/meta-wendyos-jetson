@@ -205,7 +205,7 @@ generate_default_keys() {
 
     # Run NVIDIA's script to generate DTS from ESL files
     # Provide absolute path to uefi_keys.conf
-    # sudo tools/gen_uefi_keys_dts.sh $(realpath ~/wendyos/meta-edgeos/uefi-test-keys/uefi_keys.conf)
+    # sudo tools/gen_uefi_keys_dts.sh $(realpath ~/wendyos/meta-wendyos/uefi-test-keys/uefi_keys.conf)
     sudo tools/gen_uefi_keys_dts.sh "${config}"
 
     # Expected output:
@@ -216,15 +216,15 @@ generate_default_keys() {
     # Info: dts file is generated to UefiDefaultSecurityKeys.dts
     # Info: dtbo file is generated to UefiDefaultSecurityKeys.dtbo
 
-    # Copy generated DTS file to meta-edgeos
-    # cp UefiDefaultSecurityKeys.dts ~/wendyos/meta-edgeos/uefi-test-keys/
-    # cp UefiDefaultSecurityKeys.dts ~/wendyos/meta-edgeos/recipes-bsp/uefi/files/
+    # Copy generated DTS file to meta-wendyos
+    # cp UefiDefaultSecurityKeys.dts ~/wendyos/meta-wendyos/uefi-test-keys/
+    # cp UefiDefaultSecurityKeys.dts ~/wendyos/meta-wendyos/recipes-bsp/uefi/files/
 
     # cp UefiDefaultSecurityKeys.dts "${HOME_DIR}/uefi-keys"
     cp "${HOME_DIR}/UefiDefaultSecurityKeys.dts" "${HOME_DIR}/../recipes-bsp/uefi/files"
 
     # Verify file is not empty
-    # wc -l ~/wendyos/meta-edgeos/uefi-test-keys/UefiDefaultSecurityKeys.dts
+    # wc -l ~/wendyos/meta-wendyos/uefi-test-keys/UefiDefaultSecurityKeys.dts
     # wc -l "${HOME_DIR}/uefi-keys/UefiDefaultSecurityKeys.dts"
     wc -l "${HOME_DIR}/../recipes-bsp/uefi/files/UefiDefaultSecurityKeys.dts"
 

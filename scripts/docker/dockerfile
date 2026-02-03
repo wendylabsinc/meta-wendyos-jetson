@@ -13,7 +13,7 @@ LABEL description="Custom Docker image for building Nvidia Jetson Linux platform
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV USER_NAME=dev
-ENV PROJECT=edgeOS
+ENV PROJECT=wendyos
 
 # ... avoid hanging the container creation
 # See <https://grigorkh.medium.com/fix-tzdata-hangs-docker-image-build-cdb52cc3360d>
@@ -83,7 +83,7 @@ RUN echo 'dev ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/dev && \
     chmod 0440 /etc/sudoers.d/dev
 
 # Set password for dev user
-RUN echo 'dev:edgeos' | chpasswd
+RUN echo 'dev:wendyos' | chpasswd
 
 COPY files/.bash_history /home/$USER_NAME
 

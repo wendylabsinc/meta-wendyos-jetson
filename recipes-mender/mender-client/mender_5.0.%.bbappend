@@ -4,7 +4,7 @@
 
 # Set PREFERRED_VERSION to silence the major version upgrade warning
 # The upstream mender_5.x.inc checks for $PREFERRED_VERSION in shell context
-# We set it from PREFERRED_VERSION_mender which is configured in conf/distro/edgeos.conf
+# We set it from PREFERRED_VERSION_mender which is configured in conf/distro/wendyos.conf
 PREFERRED_VERSION = "${PREFERRED_VERSION_mender}"
 
 do_install:prepend:class-target:mender-growfs-data:mender-systemd() {

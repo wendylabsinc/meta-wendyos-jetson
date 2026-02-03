@@ -1,0 +1,16 @@
+[Unit]
+Description=WendyOS Hostname Setup
+Wants=wendyos-uuid-generate.service wendyos-device-name-generate.service wendyos-etc-binds.service
+After=wendyos-uuid-generate.service wendyos-device-name-generate.service wendyos-etc-binds.service local-fs.target
+Before=avahi-daemon.service network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/generate-hostname.sh
+ExecStartPost=/bin/sleep 1
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
