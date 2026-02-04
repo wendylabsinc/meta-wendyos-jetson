@@ -1,5 +1,5 @@
 #!/bin/bash
-# WendsyOS User Setup - First Boot Service
+# WendyOS User Setup - First Boot Service
 # This script runs once on first boot to initialize user home directories
 # on the persistent data partition.
 
