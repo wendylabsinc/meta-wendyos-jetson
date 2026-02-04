@@ -14,11 +14,15 @@ SRC_URI += " \
 
 RDEPENDS:${PN} = "tegra-bootcontrol-overlay"
 
+# Package our additional verification script
+FILES:${PN} += "${datadir}/mender/modules/v3/ArtifactVerifyReboot_50_verify-bootloader-update"
+
 do_compile:prepend() {
     # Verify our custom switch-rootfs is being used
-    if grep -q "^EDGEOS_SWITCH_ROOTFS_VERSION=" ${WORKDIR}/switch-rootfs; then
-        version=$(grep "^EDGEOS_SWITCH_ROOTFS_VERSION=" ${WORKDIR}/switch-rootfs | cut -d'"' -f2)
-        bbnote "Using EdgeOS custom switch-rootfs v${version} (conditional capsule staging)"
+    if grep -q "^WENDYOS_SWITCH_ROOTFS_VERSION=" ${WORKDIR}/switch-rootfs
+    then
+        version=$(grep "^WENDYOS_SWITCH_ROOTFS_VERSION=" ${WORKDIR}/switch-rootfs | cut -d'"' -f2)
+        bbnote "Using WendyOS custom switch-rootfs v${version} (conditional capsule staging)"
     else
         bbfatal "FILESEXTRAPATHS not working! Upstream switch-rootfs detected - this breaks conditional updates."
     fi
@@ -28,6 +32,7 @@ do_compile:prepend() {
 do_install:append() {
     # Add comprehensive bootloader verification script (ArtifactVerifyReboot)
     # This supplements upstream's verify-slot (ArtifactCommit) with version+ESRT checks
+    mkdir -p ${D}${datadir}/mender/modules/v3
     install -m 0755 ${WORKDIR}/verify-bootloader-update \
         ${D}${datadir}/mender/modules/v3/ArtifactVerifyReboot_50_verify-bootloader-update
 }

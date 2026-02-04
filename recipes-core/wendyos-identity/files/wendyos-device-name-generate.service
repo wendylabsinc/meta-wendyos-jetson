@@ -1,0 +1,16 @@
+[Unit]
+Description=WendyOS Device Name Generation
+DefaultDependencies=no
+After=local-fs.target wendyos-uuid-generate.service
+Before=wendyos-identity.service
+Wants=wendyos-etc-binds.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/generate-device-name.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target

@@ -1,17 +1,17 @@
 #!/bin/bash
 #
-# EdgeOS CUDA Environment Detection Script
+# WendyOS CUDA Environment Detection Script
 # Automatically detects CUDA version and creates environment file
 #
 
 set -Eeuo pipefail
 
-ENV_FILE="/etc/default/edgeos-cuda"
+ENV_FILE="/etc/default/wendyos-cuda"
 
 # Logging (output to stderr so it doesn't pollute function return values)
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >&2
-    logger -t edgeos-cuda "$*" || true
+    logger -t wendyos-cuda "$*" || true
 }
 
 # Detect CUDA version
@@ -54,7 +54,7 @@ main() {
     # Generate environment file
     # Note: Yocto builds use /usr/local/cuda-X.X/lib/ (not lib64) and /usr/lib/ (not aarch64-linux-gnu)
     cat > "$ENV_FILE" << EOF
-# EdgeOS CUDA Environment Configuration
+# WendyOS CUDA Environment Configuration
 # Auto-generated on $(date)
 # Detected CUDA version: $cuda_ver
 

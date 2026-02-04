@@ -1,21 +1,21 @@
 #!/bin/bash
 #
-# EdgeOS Hostname Generation Script
+# Hostname Generation Script
 # Generates a unique hostname based on device UUID (fallback to serial/MAC)
 #
 
 set -Eeuo pipefail
 
-UUID_FILE="/etc/edgeos/device-uuid"
-DEVICE_NAME_FILE="/etc/edgeos/device-name"
+UUID_FILE="/etc/wendyos/device-uuid"
+DEVICE_NAME_FILE="/etc/wendyos/device-name"
 PREFIX="wendyos"
-STATE_DIR="/etc/edgeos"
+STATE_DIR="/etc/wendyos"
 STATE_HOSTNAME_FILE="${STATE_DIR}/hostname"
 
 # Logging
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
-    logger -t edgeos-hostname "$*" || true
+    logger -t wendyos-hostname "$*" || true
 }
 
 # Validate UUID (accepts with/without dashes, case-insensitive)
@@ -106,7 +106,7 @@ set_hostname() {
     # Update /etc/hosts (idempotent)
     if [ -f /etc/hosts ]; then
         grep -q "${new_hostname}" /etc/hosts 2>/dev/null || {
-            sed -i '/\(edgeos-\|wendyos-\)/d' /etc/hosts 2>/dev/null || true
+            sed -i '/\(wendyos-\|wendyos-\)/d' /etc/hosts 2>/dev/null || true
             echo "127.0.1.1 ${new_hostname} ${new_hostname}.local" >> /etc/hosts
         }
     else
@@ -117,10 +117,10 @@ set_hostname() {
 }
 
 main() {
-    log "Starting EdgeOS hostname generation"
+    log "Starting WendyOS hostname generation"
 
     # Allow opt-out
-    if [ -f /etc/edgeos-hostname-override ]; then
+    if [ -f /etc/wendyos-hostname-override ]; then
         log "Hostname override found, skipping automatic generation"
         exit 0
     fi
@@ -136,7 +136,7 @@ main() {
     # Note: avahi-daemon starts AFTER this service (Before=avahi-daemon.service)
     # so no need to restart it here - it will pick up the hostname when it starts
 
-    log "EdgeOS hostname generation completed: ${new}"
+    log "WendyOS hostname generation completed: ${new}"
 }
 
 main "$@"

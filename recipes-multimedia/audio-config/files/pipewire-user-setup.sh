@@ -1,12 +1,12 @@
 #!/bin/bash
 # pipewire-user-setup.sh
-# Enables PipeWire and WirePlumber user services for the edge user
+# Enables PipeWire and WirePlumber user services for the wendy user
 # Also ensures runtime directory exists for containers to access audio
 
 set -e
 
-USER="edge"
-USER_HOME="/home/edge"
+USER="wendy"
+USER_HOME="/home/wendy"
 USER_UID=$(id -u "$USER" 2>/dev/null || echo "1000")
 RUNTIME_DIR="/run/user/$USER_UID"
 
@@ -31,7 +31,7 @@ if [ ! -d "$RUNTIME_DIR" ]; then
     chmod 700 "$RUNTIME_DIR"
 fi
 
-# Enable and start user services as the edge user
+# Enable and start user services as the wendy user
 su - "$USER" -c "
     export XDG_RUNTIME_DIR=$RUNTIME_DIR
     export DBUS_SESSION_BUS_ADDRESS=unix:path=\$XDG_RUNTIME_DIR/bus
@@ -63,7 +63,7 @@ su - "$USER" -c "
     echo '=== Audio Service Status ==='
     systemctl --user is-active pipewire.socket pipewire-pulse.socket wireplumber.service || true
 
-    echo 'PipeWire audio services enabled for user: edge'
+    echo 'PipeWire audio services enabled for user: wendy'
 " || {
     echo "Failed to enable user services - will retry on next boot"
     exit 1

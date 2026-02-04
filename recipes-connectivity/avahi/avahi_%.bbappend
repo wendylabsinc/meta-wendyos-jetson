@@ -2,11 +2,11 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += " \
-    file://edgeos-mdns.service \
+    file://wendyos-mdns.service \
     file://generate-hostname.sh \
-    file://edgeos-hostname.service \
+    file://wendyos-hostname.service \
     file://nsswitch.conf.append \
-    file://90-edgeos.preset \
+    file://90-wendyos.preset \
     "
 
 # Ensure D-Bus support is enabled for proper service publishing
@@ -27,11 +27,11 @@ do_install:append() {
 
     # Install Avahi service file
     install -d ${D}${sysconfdir}/avahi/services
-    install -m 0644 ${WORKDIR}/edgeos-mdns.service ${D}${sysconfdir}/avahi/services/
+    install -m 0644 ${WORKDIR}/wendyos-mdns.service ${D}${sysconfdir}/avahi/services/
 
     # Install systemd service for hostname setup
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/edgeos-hostname.service ${D}${systemd_system_unitdir}/
+    install -m 0644 ${WORKDIR}/wendyos-hostname.service ${D}${systemd_system_unitdir}/
 
     # Ensure NSS mDNS is properly configured
     if [ -f "${D}${sysconfdir}/nsswitch.conf" ]
@@ -65,35 +65,35 @@ do_install:append() {
         sed -i 's/^#*publish-domain=.*/publish-domain=yes/' "${D}${sysconfdir}/avahi/avahi-daemon.conf"
 
         # Set host name
-        sed -i 's/^#*host-name=.*/# host-name is set dynamically by edgeos-hostname.service/' "${D}${sysconfdir}/avahi/avahi-daemon.conf"
+        sed -i 's/^#*host-name=.*/# host-name is set dynamically by wendyos-hostname.service/' "${D}${sysconfdir}/avahi/avahi-daemon.conf"
     fi
 
     # Systemd preset to auto-enable hostname service by default
     install -d ${D}${systemd_unitdir}/system-preset
-    install -m 0644 ${WORKDIR}/90-edgeos.preset \
-        ${D}${systemd_unitdir}/system-preset/90-edgeos.preset
+    install -m 0644 ${WORKDIR}/90-wendyos.preset \
+        ${D}${systemd_unitdir}/system-preset/90-wendyos.preset
 }
 
 # --- What remains in the avahi main package (ONLY the .service for mDNS) ---
-FILES:${PN} += " ${sysconfdir}/avahi/services/edgeos-mdns.service "
+FILES:${PN} += " ${sysconfdir}/avahi/services/wendyos-mdns.service "
 
-# --- Sub-package for EdgeOS hostname setup ---
-PACKAGES:prepend = "${PN}-edgeos-hostname "
-FILES:${PN}-edgeos-hostname = " \
+# --- Sub-package for WendyOS hostname setup ---
+PACKAGES:prepend = "${PN}-wendyos-hostname "
+FILES:${PN}-wendyos-hostname = " \
     ${sbindir}/generate-hostname.sh \
-    ${systemd_system_unitdir}/edgeos-hostname.service \
-    ${systemd_unitdir}/system-preset/90-edgeos.preset \
+    ${systemd_system_unitdir}/wendyos-hostname.service \
+    ${systemd_unitdir}/system-preset/90-wendyos.preset \
     "
 
-RDEPENDS:${PN}-edgeos-hostname = "bash iproute2 systemd avahi-daemon"
-SYSTEMD_SERVICE:${PN}-edgeos-hostname = "edgeos-hostname.service"
-SYSTEMD_AUTO_ENABLE:${PN}-edgeos-hostname = "enable"
+RDEPENDS:${PN}-wendyos-hostname = "bash iproute2 systemd avahi-daemon"
+SYSTEMD_SERVICE:${PN}-wendyos-hostname = "wendyos-hostname.service"
+SYSTEMD_AUTO_ENABLE:${PN}-wendyos-hostname = "enable"
 
 # Postinstall hook: safety net in case preset doesn't run at image build time
-pkg_postinst:${PN}-edgeos-hostname () {
+pkg_postinst:${PN}-wendyos-hostname () {
     if [ -z "$D" ]
     then
-        systemctl enable edgeos-hostname.service || true
-        systemctl start  edgeos-hostname.service || true
+        systemctl enable wendyos-hostname.service || true
+        systemctl start  wendyos-hostname.service || true
     fi
 }

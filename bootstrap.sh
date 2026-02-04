@@ -352,6 +352,6 @@ Run the following command(s):
    # (within container)
    cd ./${IMAGE_NAME}
    . ./repos/poky/oe-init-build-env ${YOCTO_BUILD_DIR}
-   bitbake edgeos-image
+   bitbake wendyos-image
 
 EOF

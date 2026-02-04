@@ -4,7 +4,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 # Provide our custom /etc/hosts, profile.d defaults, console branding, and sysctl
 SRC_URI += " \
     file://hosts \
-    file://profile.d/edgeos-defaults.sh \
+    file://profile.d/wendyos-defaults.sh \
     file://issue \
     file://issue.net \
     file://sysctl.d/99-quiet-console.conf \
@@ -15,7 +15,7 @@ do_install:append() {
 
     # Install profile.d defaults
     install -d ${D}${sysconfdir}/profile.d
-    install -m 0755 ${WORKDIR}/profile.d/edgeos-defaults.sh ${D}${sysconfdir}/profile.d/edgeos-defaults.sh
+    install -m 0755 ${WORKDIR}/profile.d/wendyos-defaults.sh ${D}${sysconfdir}/profile.d/wendyos-defaults.sh
 
     # Install console login branding (displayed before login prompt)
     install -m 0644 ${WORKDIR}/issue ${D}${sysconfdir}/issue
@@ -29,4 +29,4 @@ do_install:append() {
 # Make it a config file so local edits survive upgrades
 CONFFILES:${PN} += "${sysconfdir}/hosts"
 
-hostname:pn-base-files = "edgeos"
+hostname:pn-base-files = "wendyos"

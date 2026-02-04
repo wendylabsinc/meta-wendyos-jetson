@@ -1,6 +1,6 @@
 
 127.0.0.1       localhost
-127.0.1.1 edgeos
+127.0.1.1 wendyos
 
 # Mender server
 192.168.55.24 docker.mender.io s3.docker.mender.io

@@ -18,7 +18,7 @@ log() {
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin:$PATH
 
 # Check if a bootloader update was requested
-MARKER_FILE="/var/lib/edgeos/update-bootloader"
+MARKER_FILE="/var/lib/wendyos/update-bootloader"
 VERSION_BEFORE_FILE="/var/lib/mender/tegra-bl-version-before"
 
 # If no marker file exists, bootloader update was not requested

@@ -6,7 +6,7 @@
 #
 set -eu
 
-G=/sys/kernel/config/usb_gadget/edgeos_device
+G=/sys/kernel/config/usb_gadget/wendyos_device
 NET_IF=usb0
 UDC=$(ls /sys/class/udc | head -n1 || true)
 
@@ -32,8 +32,8 @@ fi
 USB_SERIAL=${USB_SERIAL:-$DEVICE_SERIAL}
 
 # Get friendly device name if available
-if [ -f /etc/edgeos/device-name ]; then
-    DEVICE_NAME=$(cat /etc/edgeos/device-name | tr -d '[:space:]')
+if [ -f /etc/wendyos/device-name ]; then
+    DEVICE_NAME=$(cat /etc/wendyos/device-name | tr -d '[:space:]')
     USB_PROD=${USB_PROD:-"WendyOS Device ${DEVICE_NAME}"}
 else
     SHORT_SERIAL=${DEVICE_SERIAL: -8}
