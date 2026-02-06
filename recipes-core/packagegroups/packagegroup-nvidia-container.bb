@@ -83,10 +83,10 @@ RDEPENDS:${PN} = " \
     libcufile \
     "
 
-# DeepStream-specific packages (only when EDGEOS_DEEPSTREAM=1)
+# DeepStream-specific packages (only when WENDYOS_DEEPSTREAM=1)
 # These provide libraries needed by DeepStream GStreamer plugins
-EDGEOS_DEEPSTREAM ?= "0"
-RDEPENDS:${PN} += "${@bb.utils.contains('EDGEOS_DEEPSTREAM', '1', ' \
+WENDYOS_DEEPSTREAM ?= "0"
+RDEPENDS:${PN} += "${@bb.utils.contains('WENDYOS_DEEPSTREAM', '1', ' \
     tegra-libraries-multimedia-ds \
     tegra-libraries-nvdsseimeta \
     libgstnvcustomhelper \

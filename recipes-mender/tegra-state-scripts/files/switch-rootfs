@@ -26,8 +26,8 @@
 
 set -eu
 
-# EdgeOS custom version for conditional UEFI capsule staging
-EDGEOS_SWITCH_ROOTFS_VERSION="0.1.0"
+# WendyOS custom version for conditional UEFI capsule staging
+WENDYOS_SWITCH_ROOTFS_VERSION="0.1.0"
 
 log() {
     printf '%s\n' "mender-switch-rootfs: $*" >&2
@@ -179,7 +179,7 @@ log "mounted inactive partition: ${inactive_part}"
 #
 # Expects the inactive partition to be already mounted at mount_dir
 #
-# Marker file: /var/lib/edgeos/update-bootloader
+# Marker file: /var/lib/wendyos/update-bootloader
 # Capsule location: /opt/nvidia/UpdateCapsule/tegra-bl.cap
 # ESP staging: /boot/efi/EFI/UpdateCapsule/TEGRA_BL.Cap
 
@@ -340,7 +340,7 @@ stage_capsule() {
 #    - System reboots to new boot chain with new rootfs
 
 # Check for bootloader update marker and handle accordingly
-marker_rel="/var/lib/edgeos/update-bootloader"
+marker_rel="/var/lib/wendyos/update-bootloader"
 
 if check_bootloader_marker "${marker_rel}" "${mount_dir}"
 then

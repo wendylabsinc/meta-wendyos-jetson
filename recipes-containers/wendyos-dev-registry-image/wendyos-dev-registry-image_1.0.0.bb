@@ -17,7 +17,7 @@ inherit allarch
 S = "${WORKDIR}"
 
 # Directory where offline images are stored
-OFFLINE_IMAGES_DIR = "${datadir}/edgeos/offline-images"
+OFFLINE_IMAGES_DIR = "${datadir}/wendyos/offline-images"
 
 do_install() {
     install -d ${D}${OFFLINE_IMAGES_DIR}

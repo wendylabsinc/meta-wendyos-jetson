@@ -1,14 +1,14 @@
 
-# Flash Image Size Configurations for EdgeOS
+# Flash Image Size Configurations for WendyOS
 #
 # This file defines custom partition sizes for NVMe flash images.
 # The image size is controlled by TEGRA_EXTERNAL_DEVICE_SECTORS,
 # and APP partition sizes are controlled by ROOTFSPART_SIZE_DEFAULT.
 #
-# Usage: Set EDGEOS_FLASH_IMAGE_SIZE in local.conf or distro config
+# Usage: Set WENDYOS_FLASH_IMAGE_SIZE in local.conf or distro config
 #        Values: "4GB", "8GB", "16GB", "32GB", "64GB" (default: "8GB")
 
-EDGEOS_FLASH_IMAGE_SIZE ??= "8GB"
+WENDYOS_FLASH_IMAGE_SIZE ??= "8GB"
 
 # Total sectors for different image sizes (sector size = 512 bytes)
 # Formula: (SIZE_IN_GB * 1000 * 1000 * 1000) / 512
@@ -18,8 +18,8 @@ TEGRA_EXTERNAL_DEVICE_SECTORS:16GB = "31250000"
 TEGRA_EXTERNAL_DEVICE_SECTORS:32GB = "62500000"
 TEGRA_EXTERNAL_DEVICE_SECTORS:64GB = "125000000"
 
-# Override based on EDGEOS_FLASH_IMAGE_SIZE
-TEGRA_EXTERNAL_DEVICE_SECTORS = "${TEGRA_EXTERNAL_DEVICE_SECTORS:${EDGEOS_FLASH_IMAGE_SIZE}}"
+# Override based on WENDYOS_FLASH_IMAGE_SIZE
+TEGRA_EXTERNAL_DEVICE_SECTORS = "${TEGRA_EXTERNAL_DEVICE_SECTORS:${WENDYOS_FLASH_IMAGE_SIZE}}"
 
 # APP partition sizes (bytes) for different image sizes
 # These values account for:
@@ -40,4 +40,4 @@ TEGRA_EXTERNAL_DEVICE_SECTORS = "${TEGRA_EXTERNAL_DEVICE_SECTORS:${EDGEOS_FLASH_
 #  16GB: (16.0 - 3.1 - 0.1) * 1000 = 12800 MB
 #  32GB: (32.0 - 6.2 - 0.1) * 1000 = 25700 MB
 #  64GB: (64.0 - 12.5 - 0.5) * 1000 = 51000 MB
-MENDER_STORAGE_TOTAL_SIZE_MB = "${@{'4GB': '3200', '8GB': '6400', '16GB': '12800', '32GB': '25700', '64GB': '51000'}.get(d.getVar('EDGEOS_FLASH_IMAGE_SIZE'), '6400')}"
+MENDER_STORAGE_TOTAL_SIZE_MB = "${@{'4GB': '3200', '8GB': '6400', '16GB': '12800', '32GB': '25700', '64GB': '51000'}.get(d.getVar('WENDYOS_FLASH_IMAGE_SIZE'), '6400')}"

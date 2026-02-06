@@ -1,1 +1,1 @@
-TEMPLATECONF=${TEMPLATECONF:-meta-edgeos/conf/templates/$DISTRO}
+TEMPLATECONF=${TEMPLATECONF:-meta-wendyos/conf/templates/$DISTRO}

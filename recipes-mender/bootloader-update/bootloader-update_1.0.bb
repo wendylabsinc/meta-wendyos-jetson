@@ -12,10 +12,10 @@ ALLOW_EMPTY:${PN} = "1"
 do_install() {
     # Create the bootloader update marker file
     # This signals switch-rootfs to stage the UEFI capsule during deployment
-    install -d ${D}${localstatedir}/lib/edgeos
-    touch ${D}${localstatedir}/lib/edgeos/update-bootloader
+    install -d ${D}${localstatedir}/lib/wendyos
+    touch ${D}${localstatedir}/lib/wendyos/update-bootloader
 }
 
-FILES:${PN} = "${localstatedir}/lib/edgeos/update-bootloader"
+FILES:${PN} = "${localstatedir}/lib/wendyos/update-bootloader"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"

@@ -15,9 +15,9 @@ do_install:append() {
         cat > ${D}${systemd_unitdir}/system/radvd.service <<EOF
 [Unit]
 Description=IPv6 Router Advertisement Daemon
-After=network-online.target edgeos-usbgadget-prepare.service
+After=network-online.target wendyos-usbgadget-prepare.service
 Wants=network-online.target
-Requires=edgeos-usbgadget-prepare.service
+Requires=wendyos-usbgadget-prepare.service
 
 [Service]
 Type=forking

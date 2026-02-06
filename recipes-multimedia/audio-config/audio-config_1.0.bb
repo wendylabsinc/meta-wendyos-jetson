@@ -24,7 +24,7 @@ do_install() {
     install -d ${D}${sbindir}
     install -m 0755 ${WORKDIR}/pipewire-user-setup.sh ${D}${sbindir}/
 
-    # Install systemd service to enable audio for edge user
+    # Install systemd service to enable audio for wendy user
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/pipewire-user-setup.service ${D}${systemd_system_unitdir}/
 
@@ -39,7 +39,7 @@ do_install() {
         ${D}${sysconfdir}/wireplumber/wireplumber.conf.d/
 
     # Install D-Bus policy for Bluetooth access
-    # Allows edge user to communicate with BlueZ over D-Bus
+    # Allows wendy user to communicate with BlueZ over D-Bus
     install -d ${D}${sysconfdir}/dbus-1/system.d
     install -m 0644 ${WORKDIR}/wireplumber-bluetooth.conf \
         ${D}${sysconfdir}/dbus-1/system.d/
