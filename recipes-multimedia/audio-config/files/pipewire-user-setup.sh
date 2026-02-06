@@ -7,7 +7,13 @@ set -e
 
 USER="wendy"
 USER_HOME="/home/wendy"
-USER_UID=$(id -u "$USER" 2>/dev/null || echo "1000")
+
+# Fail if user doesn't exist (don't fallback to UID 1000)
+if ! USER_UID=$(id -u "$USER" 2>/dev/null); then
+    echo "ERROR: User '$USER' does not exist"
+    exit 1
+fi
+
 RUNTIME_DIR="/run/user/$USER_UID"
 
 if [ ! -d "$USER_HOME" ]; then
@@ -18,60 +24,140 @@ fi
 echo "Setting up audio for user: $USER (UID: $USER_UID)"
 
 # Enable user lingering (keeps user services running, creates /run/user/UID)
-loginctl enable-linger "$USER" || true
+if ! loginctl enable-linger "$USER"; then
+    echo "ERROR: Failed to enable lingering for $USER"
+    exit 1
+fi
 
-# Give systemd time to create the runtime directory
-sleep 2
+# Wait for systemd to create runtime directory (with timeout)
+wait_for_runtime_dir() {
+    local timeout=10
+    local count=0
 
-# Ensure runtime directory exists and has correct permissions
-if [ ! -d "$RUNTIME_DIR" ]; then
-    echo "Creating runtime directory: $RUNTIME_DIR"
+    while [ ! -d "$RUNTIME_DIR" ]; do
+        if [ $count -ge $timeout ]; then
+            echo "ERROR: Runtime directory $RUNTIME_DIR not created after ${timeout}s"
+            return 1
+        fi
+        sleep 0.5
+        count=$((count + 1))
+    done
+
+    echo "Runtime directory ready: $RUNTIME_DIR"
+    return 0
+}
+
+if ! wait_for_runtime_dir; then
+    # Fallback: create manually if systemd didn't
+    echo "Creating runtime directory manually: $RUNTIME_DIR"
     mkdir -p "$RUNTIME_DIR"
     chown "$USER:$USER" "$RUNTIME_DIR"
     chmod 700 "$RUNTIME_DIR"
 fi
 
+# Wait for a socket file to exist (with timeout)
+wait_for_socket() {
+    local socket_path="$1"
+    local timeout=10
+    local count=0
+
+    while [ ! -S "$socket_path" ]; do
+        if [ $count -ge $timeout ]; then
+            echo "ERROR: Socket $socket_path not ready after ${timeout}s"
+            return 1
+        fi
+        sleep 0.5
+        count=$((count + 1))
+    done
+
+    echo "Socket ready: $socket_path"
+    return 0
+}
+
 # Enable and start user services as the wendy user
 su - "$USER" -c "
+    set -e
     export XDG_RUNTIME_DIR=$RUNTIME_DIR
     export DBUS_SESSION_BUS_ADDRESS=unix:path=\$XDG_RUNTIME_DIR/bus
 
-    # Ensure runtime directory exists
-    mkdir -p \$XDG_RUNTIME_DIR
+    echo 'Starting D-Bus user session...'
+    systemctl --user start dbus.service
 
-    # Enable D-Bus user session
-    systemctl --user enable dbus.service || true
-    if ! systemctl --user is-active --quiet dbus.service; then
-        systemctl --user start dbus.service || true
-    fi
+    echo 'Starting PipeWire sockets...'
+    systemctl --user start pipewire.socket pipewire-pulse.socket
 
-    # Wait for D-Bus to be ready
-    sleep 1
+    echo 'Starting WirePlumber session manager...'
+    systemctl --user start wireplumber.service
 
-    # Enable and start PipeWire socket (socket activation)
-    systemctl --user enable pipewire.socket pipewire-pulse.socket || true
-    systemctl --user start pipewire.socket pipewire-pulse.socket || true
+    echo 'Verifying services are running...'
+    systemctl --user is-active --quiet dbus.service || {
+        echo 'ERROR: D-Bus service not running'
+        exit 1
+    }
 
-    # Enable and start WirePlumber (PipeWire session manager)
-    systemctl --user enable wireplumber.service || true
-    systemctl --user start wireplumber.service || true
+    systemctl --user is-active --quiet pipewire.socket || {
+        echo 'ERROR: PipeWire socket not running'
+        exit 1
+    }
 
-    # Wait for services to initialize
-    sleep 2
+    systemctl --user is-active --quiet pipewire-pulse.socket || {
+        echo 'ERROR: PipeWire-Pulse socket not running'
+        exit 1
+    }
 
-    # Verify audio services are running
-    echo '=== Audio Service Status ==='
-    systemctl --user is-active pipewire.socket pipewire-pulse.socket wireplumber.service || true
+    systemctl --user is-active --quiet wireplumber.service || {
+        echo 'ERROR: WirePlumber service not running'
+        exit 1
+    }
 
-    echo 'PipeWire audio services enabled for user: wendy'
-" || {
-    echo "Failed to enable user services - will retry on next boot"
+    echo 'Audio services started successfully'
+"
+
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to start user audio services"
+    exit 1
+fi
+
+# Verify critical sockets exist
+echo "Verifying audio sockets exist..."
+wait_for_socket "$RUNTIME_DIR/bus" || {
+    echo "ERROR: D-Bus socket missing"
     exit 1
 }
 
-# Make runtime directory accessible to containers (readable for audio group)
-# This allows containers running as different UIDs to access the sockets
-chmod 755 "$RUNTIME_DIR" 2>/dev/null || true
+wait_for_socket "$RUNTIME_DIR/pipewire/pipewire-0" || {
+    echo "ERROR: PipeWire socket missing"
+    exit 1
+}
 
-echo "Audio setup complete for $USER"
+wait_for_socket "$RUNTIME_DIR/pulse/native" || {
+    echo "ERROR: PulseAudio compatibility socket missing"
+    exit 1
+}
+
+# Make runtime directory accessible to audio group (not world-readable)
+# Containers running as audio group can access sockets
+if getent group audio >/dev/null 2>&1; then
+    chgrp audio "$RUNTIME_DIR"
+    chmod 750 "$RUNTIME_DIR"
+    echo "Runtime directory permissions: 750 (user=rwx, audio=rx, other=none)"
+else
+    # Fallback if audio group doesn't exist
+    chmod 755 "$RUNTIME_DIR"
+    echo "WARNING: audio group not found, using 755 permissions"
+fi
+
+echo "=== Audio Setup Complete ==="
+echo "User: $USER (UID: $USER_UID)"
+echo "Runtime dir: $RUNTIME_DIR"
+echo "D-Bus socket: $RUNTIME_DIR/bus"
+echo "PipeWire socket: $RUNTIME_DIR/pipewire/pipewire-0"
+echo "Pulse socket: $RUNTIME_DIR/pulse/native"
+echo ""
+echo "Container usage:"
+echo "  podman run --device=nvidia.com/gpu=all --group-add audio \\"
+echo "    -e PULSE_SERVER=unix:$RUNTIME_DIR/pulse/native \\"
+echo "    -e XDG_RUNTIME_DIR=$RUNTIME_DIR \\"
+echo "    your-image:latest"
+
 exit 0
