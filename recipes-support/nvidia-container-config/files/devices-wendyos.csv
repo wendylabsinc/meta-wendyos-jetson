@@ -23,17 +23,11 @@ dir, /sys/devices/virtual/thermal
 # Tegra release info
 file, /etc/nv_tegra_release
 
-# Audio stack - Complete audio/Bluetooth support for containers
-# Containers need both low-level (ALSA) and high-level (PipeWire/Pulse) access
+# Audio stack - PipeWire socket-based audio for containers
+# Containers use --group-add audio to access PipeWire sockets
+# This avoids permission conflicts with /dev/snd device nodes
 
-# ALSA device nodes (direct hardware access - needed for some apps)
-dir, /dev/snd
-
-# ALSA configuration and plugins
-file, /etc/asound.conf
-dir, /usr/share/alsa
-
-# PipeWire runtime sockets (preferred - modern audio routing)
+# PipeWire runtime sockets (modern audio routing via Unix sockets)
 dir, /run/user/1000
 dir, /run/user/1000/pipewire
 dir, /run/user/1000/pulse
