@@ -123,7 +123,7 @@ make shell
 make build
 
 # Build for SD card
-make build MACHINE=jetson-orin-nano-devkit-edgeos
+make build MACHINE=jetson-orin-nano-devkit-wendyos
 ```
 
 #### Option B: Manual Steps
@@ -494,7 +494,7 @@ The system includes Mender for Over-The-Air updates with A/B partition redundanc
 - `/dev/nvme0n1p1` - Root filesystem A
 - `/dev/nvme0n1p2` - Root filesystem B
 - `/dev/nvme0n1p11` - Boot partition (shared)
-- `/dev/nvme0n1p15` - UDA partition (NVIDIA reserved, not used by wendyos)
+- `/dev/nvme0n1p15` - UDA partition (NVIDIA reserved, not used by WendyOS)
 - `/dev/nvme0n1p17` - Mender data partition (expandable, mounted at `/data`)
 
 ### Manual Update

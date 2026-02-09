@@ -23,8 +23,8 @@ DOCKER_TAG := scarthgap
 DOCKER_USER := dev
 DOCKER_WORKDIR := /home/$(DOCKER_USER)/$(IMAGE_NAME)
 BUILD_DIR := build
-MACHINE ?= jetson-orin-nano-devkit-nvme-edgeos
-IMAGE_TARGET ?= edgeos-image
+MACHINE ?= jetson-orin-nano-devkit-nvme-wendyos
+IMAGE_TARGET ?= wendyos-image
 
 # Flash configuration
 FLASH_DEVICE ?=
@@ -84,14 +84,14 @@ help:
 	@printf "$(GREEN)Configuration:$(NC)\n"
 	@printf "  MACHINE=$(MACHINE)\n"
 	@printf "  IMAGE_TARGET=$(IMAGE_TARGET)\n"
-	@printf "  FLASH_IMAGE_SIZE=$(FLASH_IMAGE_SIZE)  (must match EDGEOS_FLASH_IMAGE_SIZE)\n"
+	@printf "  FLASH_IMAGE_SIZE=$(FLASH_IMAGE_SIZE)  (must match WENDYOS_FLASH_IMAGE_SIZE)\n"
 	@printf "  FLASH_DEVICE=        (e.g., /dev/disk4)\n"
 	@printf "  FLASH_CONFIRM=       (set to 'yes' for non-interactive mode)\n"
 	@printf "\n"
 	@printf "$(YELLOW)Examples:$(NC)\n"
 	@printf "  make setup                                    # First time setup\n"
 	@printf "  make build                                    # Build default image\n"
-	@printf "  make build MACHINE=jetson-orin-nano-devkit-edgeos  # Build for SD card\n"
+	@printf "  make build MACHINE=jetson-orin-nano-devkit-wendyos  # Build for SD card\n"
 	@printf "  make shell                                    # Interactive development\n"
 	@printf "  make flash-to-external                        # Interactive flash\n"
 	@printf "  make flash-to-external FLASH_DEVICE=/dev/disk4 FLASH_CONFIRM=yes  # Non-interactive\n"
@@ -253,9 +253,20 @@ clean:
 distclean:
 	@printf "$(RED)WARNING: This will remove ALL build artifacts including downloads and sstate-cache.$(NC)\n"
 	@printf "This cannot be undone and will require re-downloading all sources.\n"
+	@if [ "$$(uname)" = "Darwin" ]; then \
+		printf "$(YELLOW)On macOS, this will remove Docker volumes (100GB+ of build data).$(NC)\n"; \
+	fi
 	@read -p "Are you sure? [y/N] " confirm && \
 		if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
-			rm -rf $(PROJECT_DIR)/build $(PROJECT_DIR)/downloads $(PROJECT_DIR)/sstate-cache; \
+			if [ "$$(uname)" = "Darwin" ]; then \
+				printf "$(CYAN)Removing Docker volumes (macOS)...$(NC)\n"; \
+				docker volume rm $(VOLUME_BUILD) $(VOLUME_SSTATE) $(VOLUME_DOWNLOADS) 2>/dev/null || true; \
+				printf "$(GREEN)Docker volumes removed.$(NC)\n"; \
+			else \
+				printf "$(CYAN)Removing local directories (Linux)...$(NC)\n"; \
+				rm -rf $(PROJECT_DIR)/build $(PROJECT_DIR)/downloads $(PROJECT_DIR)/sstate-cache; \
+				printf "$(GREEN)Local directories removed.$(NC)\n"; \
+			fi; \
 			printf "$(GREEN)Distclean complete.$(NC)\n"; \
 		else \
 			printf "Cancelled.\n"; \
