@@ -673,6 +673,31 @@ Building WendyOS on macOS is fully supported through Docker Desktop. The build p
 
 4. **X11 Support**: X11 forwarding (for GUI tools like `devtool`) is not available by default on macOS. If needed, install XQuartz and configure it manually. However, Yocto command-line builds work without X11.
 
+5. **Docker Volume Storage**: On macOS, build artifacts are stored in Docker volumes (not on the host filesystem) to provide case-sensitive storage required by Yocto:
+   - **Volumes created** (default for scarthgap):
+     - `wendyos-build-scarthgap` - Build directory (tmp, cache)
+     - `wendyos-sstate-scarthgap` - Shared state cache
+     - `wendyos-downloads-scarthgap` - Downloaded source tarballs
+   - **Volume naming**: Volume names include the Yocto release tag (`DOCKER_TAG`) to allow multiple releases on the same machine (e.g., scarthgap, kirkstone)
+   - **Storage location**: Managed by Docker Desktop's VM, typically consuming 100GB+ for a full build
+   - **Inspecting volumes**:
+     ```bash
+     docker volume ls | grep wendyos
+     docker volume inspect wendyos-build-scarthgap
+     ```
+   - **Cleaning volumes**:
+     ```bash
+     # Remove specific volume
+     docker volume rm wendyos-build-scarthgap
+
+     # Remove all for current DOCKER_TAG (use distclean target)
+     make distclean
+
+     # Remove volumes for different Yocto release
+     make distclean DOCKER_TAG=kirkstone
+     ```
+   - **Important**: Unlike Linux where files are visible in `./build/`, `./downloads/`, etc., on macOS these files only exist inside Docker volumes. Use `make deploy` to copy build artifacts to the host.
+
 ### Flashing
 
 Use the interactive flash tool (works on both macOS and Linux):
@@ -707,7 +732,8 @@ make flash-to-external FLASH_DEVICE=/dev/sdb FLASH_CONFIRM=yes
 **Issue: Build runs out of disk space**
 - Increase Docker Desktop disk allocation in Preferences → Resources
 - Clean up old images: `docker system prune -a`
-- Clear the Yocto sstate-cache if needed
+- Remove Docker volumes: `make distclean` (see "Docker Volume Storage" above for details)
+- Note: A full build typically requires 100GB+ in Docker volumes
 
 **Issue: Permission denied errors on mounted volumes**
 - Ensure the project directory is in a location Docker Desktop can access
