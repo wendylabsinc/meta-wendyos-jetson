@@ -278,10 +278,12 @@ update-repos:
 		if [ -d "$$repo_dir/.git" ]; then \
 			cd "$$repo_dir" && \
 			BEFORE=$$(git rev-parse HEAD 2>/dev/null); \
-			if git pull --ff-only 2>&1 | grep -q "Already up to date"; then \
+			GIT_OUTPUT=$$(git pull --ff-only 2>&1); \
+			GIT_EXIT=$$?; \
+			if echo "$$GIT_OUTPUT" | grep -q "Already up to date"; then \
 				printf "$(GREEN)up to date$(NC)\n"; \
 				UNCHANGED=$$((UNCHANGED + 1)); \
-			elif [ $$? -eq 0 ]; then \
+			elif [ $$GIT_EXIT -eq 0 ]; then \
 				AFTER=$$(git rev-parse HEAD 2>/dev/null); \
 				if [ "$$BEFORE" != "$$AFTER" ]; then \
 					printf "$(GREEN)✓ updated$(NC)\n"; \
