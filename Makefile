@@ -24,6 +24,14 @@ DOCKER_REPO := wendyos-build
 # Example: make build DOCKER_TAG=kirkstone
 DOCKER_TAG ?= scarthgap
 
+# Validate DOCKER_TAG against known Yocto releases
+VALID_TAGS := scarthgap kirkstone dunfell hardknott gatesgarth
+ifeq ($(filter $(DOCKER_TAG),$(VALID_TAGS)),)
+    $(warning WARNING: DOCKER_TAG '$(DOCKER_TAG)' is not in the list of known Yocto releases)
+    $(warning Known releases: $(VALID_TAGS))
+    $(warning Proceeding anyway, but Docker image may not exist)
+endif
+
 DOCKER_USER := dev
 DOCKER_WORKDIR := /home/$(DOCKER_USER)/$(IMAGE_NAME)
 BUILD_DIR := build
@@ -52,6 +60,16 @@ GREEN := \033[0;32m
 YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
+
+# Docker run flags - detect if running interactively
+# Use -it for interactive terminals, just -t for CI/scripts
+# Check if stdin (fd 0) is a terminal
+IS_TTY := $(shell test -t 0 && echo yes || echo no)
+ifeq ($(IS_TTY),yes)
+    DOCKER_RUN_FLAGS := --rm -it
+else
+    DOCKER_RUN_FLAGS := --rm -t
+endif
 
 # Default target
 .DEFAULT_GOAL := help
@@ -276,26 +294,38 @@ update-repos:
 		repo=$$(basename "$$repo_dir"); \
 		printf "$(CYAN)Updating $$repo...$(NC) "; \
 		if [ -d "$$repo_dir/.git" ]; then \
-			cd "$$repo_dir" && \
-			BEFORE=$$(git rev-parse HEAD 2>/dev/null); \
-			GIT_OUTPUT=$$(git pull --ff-only 2>&1); \
-			GIT_EXIT=$$?; \
-			if echo "$$GIT_OUTPUT" | grep -q "Already up to date"; then \
-				printf "$(GREEN)up to date$(NC)\n"; \
-				UNCHANGED=$$((UNCHANGED + 1)); \
-			elif [ $$GIT_EXIT -eq 0 ]; then \
-				AFTER=$$(git rev-parse HEAD 2>/dev/null); \
-				if [ "$$BEFORE" != "$$AFTER" ]; then \
+			RESULT=$$( \
+				cd "$$repo_dir" && \
+				BEFORE=$$(git rev-parse HEAD 2>/dev/null) && \
+				GIT_OUTPUT=$$(git pull --ff-only 2>&1) && \
+				GIT_EXIT=$$? && \
+				if echo "$$GIT_OUTPUT" | grep -q "Already up to date"; then \
+					echo "unchanged"; \
+				elif [ $$GIT_EXIT -eq 0 ]; then \
+					AFTER=$$(git rev-parse HEAD 2>/dev/null); \
+					if [ "$$BEFORE" != "$$AFTER" ]; then \
+						echo "updated"; \
+					else \
+						echo "unchanged"; \
+					fi; \
+				else \
+					echo "failed"; \
+				fi \
+			); \
+			case "$$RESULT" in \
+				updated) \
 					printf "$(GREEN)✓ updated$(NC)\n"; \
 					UPDATED=$$((UPDATED + 1)); \
-				else \
+					;; \
+				unchanged) \
 					printf "$(GREEN)up to date$(NC)\n"; \
 					UNCHANGED=$$((UNCHANGED + 1)); \
-				fi; \
-			else \
-				printf "$(RED)✗ failed$(NC)\n"; \
-				FAILED=$$((FAILED + 1)); \
-			fi; \
+					;; \
+				failed) \
+					printf "$(RED)✗ failed$(NC)\n"; \
+					FAILED=$$((FAILED + 1)); \
+					;; \
+			esac; \
 		else \
 			printf "$(YELLOW)not a git repo$(NC)\n"; \
 		fi; \
@@ -352,7 +382,7 @@ build: _check-setup _ensure-volumes
 	@printf "\n"
 	@if [ "$$(uname)" = "Darwin" ]; then \
 		docker run \
-			--rm -t \
+			$(DOCKER_RUN_FLAGS) \
 			--privileged \
 			-e "TERM=xterm-256color" \
 			-e "LANG=C.UTF-8" \
@@ -368,7 +398,7 @@ build: _check-setup _ensure-volumes
 			'; \
 	else \
 		cd $(DOCKER_DIR) && docker run \
-			--rm \
+			$(DOCKER_RUN_FLAGS) \
 			-v /tmp/.X11-unix:/tmp/.X11-unix \
 			--network host \
 			--privileged \
@@ -394,7 +424,7 @@ build-sdk: _check-setup _ensure-volumes
 	@printf "$(CYAN)Building SDK for $(MACHINE)...$(NC)\n"
 	@if [ "$$(uname)" = "Darwin" ]; then \
 		docker run \
-			--rm -t \
+			$(DOCKER_RUN_FLAGS) \
 			--privileged \
 			-e "TERM=xterm-256color" \
 			-e "LANG=C.UTF-8" \
@@ -410,7 +440,7 @@ build-sdk: _check-setup _ensure-volumes
 			'; \
 	else \
 		cd $(DOCKER_DIR) && docker run \
-			--rm \
+			$(DOCKER_RUN_FLAGS) \
 			-v /tmp/.X11-unix:/tmp/.X11-unix \
 			--network host \
 			--privileged \
