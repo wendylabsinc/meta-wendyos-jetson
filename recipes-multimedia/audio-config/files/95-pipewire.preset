@@ -1,0 +1,7 @@
+# Systemd user preset for PipeWire audio stack
+# This ensures PipeWire and WirePlumber are enabled by default for all users
+
+enable dbus.service
+enable pipewire.socket
+enable pipewire-pulse.socket
+enable wireplumber.service

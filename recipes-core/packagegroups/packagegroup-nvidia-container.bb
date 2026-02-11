@@ -34,6 +34,10 @@ inherit packagegroup
 # cuSPARSELt (Lightweight sparse operations):
 # - libcusparselt0
 #
+# Note: cuDSS (Direct sparse linear solver - required by PyTorch 2.8+) is NOT
+# included in the base OS. Install it in containers via pip when needed:
+#   pip install nvidia-cudss-cu12
+#
 # TensorRT (Inference optimization):
 # - libnvinfer10
 # - libnvinfer-plugin10
@@ -51,7 +55,7 @@ inherit packagegroup
 # - nvidia-container-toolkit (nvidia-ctk for CDI generation)
 # - nvidia-container-runtime
 
-# Core packages required for l4t.csv container support
+# Core packages required for l4t.csv container support (always included)
 RDEPENDS:${PN} = " \
     nvidia-container-config \
     nvidia-container-toolkit \
@@ -63,17 +67,32 @@ RDEPENDS:${PN} = " \
     cuda-nvrtc \
     cuda-nvtx \
     cuda-cupti \
+    tegra-libraries-core \
     tegra-libraries-cuda \
     tegra-libraries-multimedia \
     tegra-libraries-multimedia-utils \
+    tegra-libraries-multimedia-v4l \
     tegra-libraries-nvsci \
     tegra-libraries-camera \
+    tegra-libraries-eglcore \
+    tegra-libraries-glescore \
     cudnn \
     cusparselt \
     tensorrt-core \
     tensorrt-plugins \
     libcufile \
     "
+
+# DeepStream-specific packages (only when WENDYOS_DEEPSTREAM=1)
+# These provide libraries needed by DeepStream GStreamer plugins
+WENDYOS_DEEPSTREAM ?= "0"
+RDEPENDS:${PN} += "${@bb.utils.contains('WENDYOS_DEEPSTREAM', '1', ' \
+    tegra-libraries-multimedia-ds \
+    tegra-libraries-nvdsseimeta \
+    libgstnvcustomhelper \
+    yaml-cpp-070 \
+    tensorrt-trtexec-prebuilt \
+    ', '', d)}"
 
 # Note: cuda-libraries likely includes:
 #  - cuBLAS (cublas, cublasLt)

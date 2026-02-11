@@ -1,7 +1,7 @@
 DEPENDS:append = " tegra-helper-scripts-native"
 PATH =. "${STAGING_BINDIR_NATIVE}/tegra-flash:"
 
-# Override NVMe partition layout for EdgeOS to:
+# Override NVMe partition layout for WendyOS to:
 # 1. Remove "reserved" partition (between UDA and APP)
 # 2. Rename "permanet_user_storage" (p17) to "mender_data"
 # 3. Update mender_data size to 512MB (will auto-expand)
@@ -12,7 +12,7 @@ PATH =. "${STAGING_BINDIR_NATIVE}/tegra-flash:"
 
 do_install:append() {
     # Only apply to NVMe variant
-    if [ "${MACHINE}" != "jetson-orin-nano-devkit-nvme-edgeos" ]; then
+    if [ "${MACHINE}" != "jetson-orin-nano-devkit-nvme-wendyos" ]; then
         return
     fi
 
@@ -21,11 +21,11 @@ do_install:append() {
     local layout_path="${D}${datadir}/l4t-storage-layout/${layout_file}"
 
     if [ ! -f "${layout_path}" ]; then
-        bbwarn "Layout file ${layout_file} not found at ${layout_path}, skipping EdgeOS modifications"
+        bbwarn "Layout file ${layout_file} not found at ${layout_path}, skipping WendyOS modifications"
         return
     fi
 
-    bbnote "EdgeOS: Modifying ${layout_file} to use mender_data partition..."
+    bbnote "wendyos: Modifying ${layout_file} to use mender_data partition..."
 
     # 1. Remove the "reserved" partition (between UDA and APP)
     #    This partition blocks expansion and is not needed
@@ -46,12 +46,21 @@ do_install:append() {
             <percent_reserved> 0 </percent_reserved>\
             <align_boundary> 16384 </align_boundary>\
             <filename> DATAFILE </filename>\
-            <description> **EdgeOS/Mender.** Data partition for persistent storage (home directories, user data, Mender state). Positioned after APP_b to allow expansion to fill remaining disk space. Auto-expands via mender-grow-data.service on first boot. UDA (p15) is kept for NVIDIA compatibility but not mounted by EdgeOS. </description>\
+            <description> **WendyOS/Mender.** Data partition for persistent storage (home directories, user data, Mender state). Positioned after APP_b to allow expansion to fill remaining disk space. Auto-expands via mender-grow-data.service on first boot. UDA (p15) is kept for NVIDIA compatibility but not mounted by wendyos. </description>\
         </partition>' \
         ${WORKDIR}/${layout_file}.tmp1
+
+    # 3. Remove DATAFILE filename from UDA partition
+    #    Prevent flash error when dataimg is larger than UDA partition
+    #    UDA is not used by WendyOS (mender_data is used instead)
+    #    UDA is kept for NVIDIA compatibility but should not have pre-written content
+    #    The filename field causes flash tools to fail during signing
+    sed -i '/<partition name="UDA"/,/<\/partition>/ {
+        /<filename>/d
+    }' ${WORKDIR}/${layout_file}.tmp1
 
     # Install the modified layout
     install -m 0644 ${WORKDIR}/${layout_file}.tmp1 ${layout_path}
 
-    bbnote "EdgeOS: Successfully added mender_data partition to ${layout_file}"
+    bbnote "WendyOS: Successfully added mender_data partition to ${layout_file}"
 }

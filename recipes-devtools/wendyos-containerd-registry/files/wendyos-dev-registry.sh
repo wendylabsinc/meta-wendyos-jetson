@@ -1,5 +1,5 @@
 #!/bin/bash
-# EdgeOS Dev Registry Manager
+# WendyOS Dev Registry Manager
 # Helper script for wendy-agent to start/stop the development container registry
 # The registry uses containerd's content store (no duplicate storage)
 
@@ -20,7 +20,7 @@ CURL="/usr/bin/curl"
 
 usage() {
     cat <<EOF
-EdgeOS Dev Registry Manager
+WendyOS Dev Registry Manager
 
 Usage: $(basename "$0") {start|stop|status|restart|logs} [listen_address]
 
@@ -48,7 +48,7 @@ Examples:
     sudo $(basename "$0") start 127.0.0.1:5000
 
     # Access from dev machine via SSH port-forward:
-    ssh -L 5000:127.0.0.1:5000 edgeos@device.local
+    ssh -L 5000:127.0.0.1:5000 wendyos@device.local
 
     # Then push/pull images:
     docker tag myimage:latest localhost:5000/myimage:latest
@@ -59,14 +59,14 @@ EOF
 check_image_exists() {
     if ! $CTR -n "${NAMESPACE}" images ls | $GREP -q "${IMAGE_NAME}"; then
         echo "ERROR: Registry image '${IMAGE_NAME}' not found in namespace '${NAMESPACE}'"
-        echo "Did the import service run? Check: systemctl status edgeos-dev-registry-import.service"
-        echo "Or manually import: sudo $CTR -n ${NAMESPACE} images import /usr/share/edgeos/offline-images/containerd-registry-latest.tar"
+        echo "Did the import service run? Check: systemctl status wendyos-dev-registry-import.service"
+        echo "Or manually import: sudo $CTR -n ${NAMESPACE} images import /usr/share/wendyos/offline-images/containerd-registry-latest.tar"
         exit 1
     fi
 }
 
 start_registry() {
-    echo "Starting EdgeOS dev registry..."
+    echo "Starting WendyOS dev registry..."
 
     # Check if image exists
     check_image_exists
@@ -98,14 +98,14 @@ start_registry() {
 
     echo "✅ Dev registry started on ${LISTEN_ADDRESS}"
     if [[ "${LISTEN_ADDRESS}" == 127.0.0.1:* ]]; then
-        echo "Registry is loopback-only. Access via SSH port-forward: ssh -L 5000:127.0.0.1:5000 edgeos@<device>"
+        echo "Registry is loopback-only. Access via SSH port-forward: ssh -L 5000:127.0.0.1:5000 wendyos@<device>"
     else
         echo "Registry is accessible on the network at ${LISTEN_ADDRESS}"
     fi
 }
 
 stop_registry() {
-    echo "Stopping EdgeOS dev registry..."
+    echo "Stopping WendyOS dev registry..."
 
     if ! $CTR -n "${NAMESPACE}" tasks ls | $GREP -q "${CONTAINER_NAME}"; then
         echo "Registry is not running"

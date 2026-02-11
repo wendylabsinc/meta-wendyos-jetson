@@ -1,5 +1,22 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
+#
+# Mender update flow:
+#  1. Mender downloads .mender artifact
+#  2. Mender extracts and writes rootfs to inactive partition (APP_a or APP_b)
+#  3. ArtifactInstall_Leave state -> switch-rootfs executes:
+#     (after rootfs is written, before reboot)
+#     - Flips boot slot (nvbootctrl -t rootfs set-active-boot-slot)
+#     - Mounts inactive partition to check for bootloader update marker
+#     - If marker exists: stages UEFI capsule to ESP and sets OSIndications
+#  4. System reboots
+#  5. UEFI firmware processes capsule (if staged)
+#  6. System boots from new rootfs
+#  7. ArtifactVerifyReboot state -> verify-bootloader-update executes:
+#     (after reboot, before commit)
+#     - Verifies bootloader version changed (if capsule was staged)
+#     - Checks ESRT status for capsule update result
+#  8. Mender commits the update (makes it permanent)
 #
 # Mender state script: ArtifactInstall_Leave_50_switch-rootfs
 # Jetson Orin (UEFI) + JetPack 6 (R36.x) + Mender
@@ -9,16 +26,19 @@
 
 set -eu
 
+# WendyOS custom version for conditional UEFI capsule staging
+WENDYOS_SWITCH_ROOTFS_VERSION="0.1.0"
+
 log() {
     printf '%s\n' "mender-switch-rootfs: $*" >&2
 }
 
 # Mender's script environment can be minimal, make sure the tools are reachable
-export PATH=/usr/sbin:/sbin:/usr/bin:/bin:$PATH
+export PATH=/usr/sbin:/sbin:/usr/bin:/bin:${PATH}
 
 require() {
-    if ! command -v "$1" >/dev/null 2>&1; then
-        log "ERROR: required tool '$1' not found in PATH=${PATH}"
+    if ! command -v "${1}" >/dev/null 2>&1; then
+        log "ERROR: required tool '${1}' not found in PATH=${PATH}"
         exit 1
     fi
 }
@@ -27,20 +47,21 @@ require nvbootctrl
 require blkid
 require lsblk
 require findmnt
+require oe4t-set-uefi-OSIndications
 
 # Map slot number -> suffix used by NVIDIA partition labels
 slot_suffix() {
-    case "$1" in
+    case "${1}" in
         0) echo "a" ;;
         1) echo "b" ;;
-        *) log "ERROR: unexpected slot '$1'"; exit 1 ;;
+        *) log "ERROR: unexpected slot '${1}'"; exit 1 ;;
     esac
 }
 
 # Resolve the block device path (/dev/…) for the inactive rootfs partition
 resolve_inactive_part() {
-    next_slot="$1"                       # 0 or 1
-    suf="$(slot_suffix "$next_slot")"    # "a" or "b"
+    next_slot="${1}"                       # 0 or 1
+    suf="$(slot_suffix "${next_slot}")"    # "a" or "b"
 
     # 1) Fast path: /dev/disk/by-partlabel/APP_a or APP_b (common on R36.x)
     if [ -e "/dev/disk/by-partlabel/APP_${suf}" ]
@@ -61,8 +82,8 @@ resolve_inactive_part() {
     # 3) Some layouts keep APP label but encode slot in PARTUUID vars; try nv_boot_control.conf
     if [ -r /etc/nv_boot_control.conf ]; then
         # Look for ROOTFS_PARTUUID_A / ROOTFS_PARTUUID_B style keys
-        key="ROOTFS_PARTUUID_$(printf '%s' "$suf" | tr 'ab' 'AB')"
-        uuid="$(awk -F= -v k="$key" '$1==k {print $2}' /etc/nv_boot_control.conf | tr -d ' \t\r')"
+        key="ROOTFS_PARTUUID_$(printf '%s' "${suf}" | tr 'ab' 'AB')"
+        uuid="$(awk -F= -v k="${key}" '$1==k {print $2}' /etc/nv_boot_control.conf | tr -d ' \t\r')"
         if [ -n "${uuid:-}" ] && [ -e "/dev/disk/by-partuuid/${uuid}" ]; then
             readlink -f "/dev/disk/by-partuuid/${uuid}"
             return 0
@@ -99,7 +120,22 @@ resolve_inactive_part() {
     exit 1
 }
 
-# Flip to the inactive rootfs slot
+# Check if bootloader update marker is present in the inactive rootfs
+# Expects the inactive partition to be already mounted at mount_dir
+# Returns 0 if marker exists, 1 otherwise
+check_bootloader_marker() {
+    marker_rel="${1}"
+    mount_dir="${2}"
+
+    if [ -f "${mount_dir}${marker_rel}" ]
+    then
+        return 0
+    fi
+
+    return 1
+}
+
+# Determine current and next rootfs slot
 cur="$(nvbootctrl -t rootfs get-current-slot)"
 case "${cur}" in
     0) next=1 ;;
@@ -110,99 +146,213 @@ esac
 log "current slot: ${cur}"
 log "next slot: ${next}"
 
-# Optionally resolve inactive part (needed only if we might stage a capsule)
-inactive_part="$(resolve_inactive_part "$next")"
+# Resolve inactive partition
+inactive_part="$(resolve_inactive_part "${next}")"
 log "inactive partition: ${inactive_part}"
 
-# Do the slot switch now; this is the *only* mandatory action
-nvbootctrl -t rootfs set-active-boot-slot "${next}"
-log "set active boot slot: ${next} OK"
+# Mount inactive partition once for the entire workflow
+mount_dir="/mnt/inactive"
 
-###############################################################################
-# Stage a bootloader capsule *ONLY IF* the newly installed rootfs
-# explicitly requests it via marker file:
-#    /var/lib/edgeos/update-bootloader  (inside the inactive rootfs)
+cleanup_inactive() {
+    log "cleanup triggered..."
+    if findmnt -M "${mount_dir}" >/dev/null 2>&1; then
+        umount "${mount_dir}" 2>/dev/null || true
+        log "unmounted inactive partition"
+    fi
+}
+trap cleanup_inactive EXIT INT TERM
+
+mkdir -p "${mount_dir}"
+if ! mount "${inactive_part}" "${mount_dir}"
+then
+    log "ERROR: could not mount inactive rootfs (${inactive_part})"
+    exit 1
+fi
+
+log "mounted inactive partition: ${inactive_part}"
+
+# UEFI Capsule Staging (Atomic Bootloader + Rootfs Updates)
 #
-# On Orin UEFI, capsule processing can rewrite boot-control
-# state during the next boot and undo the slot flip.
-# Only do this when you’re actually updating BL, and you accept that behavior.
-###############################################################################
-maybe_stage_capsule() {
-    marker_rel="/var/lib/edgeos/update-bootloader"
-    mount_dir="/mnt/inactive"
-    esp_dir=""
-    need_capsule=0
+# If a marker file exists in the newly updated rootfs, stage the UEFI capsule
+# to the ESP for processing on next boot. This ensures bootloader and rootfs
+# versions stay synchronized during major L4T version upgrades.
+#
+# Expects the inactive partition to be already mounted at mount_dir
+#
+# Marker file: /var/lib/wendyos/update-bootloader
+# Capsule location: /opt/nvidia/UpdateCapsule/tegra-bl.cap
+# ESP staging: /boot/efi/EFI/UpdateCapsule/TEGRA_BL.Cap
 
-    mkdir -p "$mount_dir"
-    if ! mount "${inactive_part}" "${mount_dir}"
+# Verify OSIndications UEFI variable (bit 2 set for capsule processing)
+verify_osindications() {
+    # Per UEFI spec, SetVariable() is synchronous - write completes before return
+    #
+    # EFI variable format in sysfs: [4-byte attributes][variable data]
+    # OsIndications is UINT64 at offset 4, we check bit 2 (0x04) for capsule processing
+    # Bit flags: 0x01=boot to FW UI, 0x02=boot from file, 0x04=process capsule, 0x08=capsule report
+
+    # EFI_GLOBAL_VARIABLE GUID (standard UEFI namespace for global variables)
+    local -r efi_global_guid="8be4df61-93ca-11d2-aa0d-00e098032b8c"
+    local value="" raw_hex osind_file raw_data raw_bytes
+
+    # try efivar command first (cleaner, more semantic)
+    if command -v efivar >/dev/null 2>&1
     then
-        log "WARN: could not mount inactive rootfs (${mount_dir})"
-        log "skipping capsule check"
-        return 0
-    fi
+        # efivar -d outputs only variable data (no attributes), as hex bytes
+        raw_hex=$(efivar -n ${efi_global_guid}-OsIndications -d 2>/dev/null | head -1)
+        if [ -n "${raw_hex}" ]
+        then
+            log "DEBUG: efivar raw output: ${raw_hex}"
 
-    if [ -f "${mount_dir}${marker_rel}" ]
-    then
-        need_capsule=1
-    fi
-
-    if [ "${need_capsule}" -eq 1 ]
-    then
-        require oe4t-set-uefi-OSIndications
-
-        # Detect ESP mount point (/boot/efi is standard; otherwise try to mount it)
-        if findmnt -no TARGET /boot/efi >/dev/null 2>&1; then
-            esp_dir="/boot/efi"
-        else
-            # Try common ESP by-partlabel
-            if [ -e /dev/disk/by-partlabel/UEFI-ESP ]
+            # extract first byte of data and convert hex to decimal (portable)
+            first_byte=$(echo "${raw_hex}" | awk '{print $1}' | tr -d ' ')
+            if [ -n "${first_byte}" ]
             then
-                mkdir -p /boot/efi
-                mount /dev/disk/by-partlabel/UEFI-ESP /boot/efi || {
-                    umount "${mount_dir}" || true
-                    log "ERROR: failed to mount ESP; cannot stage capsule"
-                    exit 1
-                }
-
-                esp_dir="/boot/efi"
-            else
-                umount "${mount_dir}" || true
-                log "ERROR: ESP not mounted and /dev/disk/by-partlabel/UEFI-ESP missing"
-                exit 1
+                # use bash arithmetic for hex to decimal conversion (portable)
+                value=$((0x${first_byte}))
+                log "DEBUG: efivar parsed value: ${value} (0x$(printf '%02x' ${value}))"
             fi
         fi
+    fi
 
-        cap_src="${mount_dir}/opt/nvidia/UpdateCapsule/tegra-bl.cap"
-        cap_dst="${esp_dir}/EFI/UpdateCapsule/TEGRA_BL.Cap"
-
-        if [ ! -f "${cap_src}" ]
+    # fallback to direct file access with dd (works in minimal environments)
+    if [ -z "${value}" ]
+    then
+        osind_file="/sys/firmware/efi/efivars/OsIndications-${efi_global_guid}"
+        if [ -r "${osind_file}" ]
         then
-            umount "${mount_dir}" || true
-            log "ERROR: BL update requested but capsule not found (${cap_src})"
-            exit 1
+            # read 8 bytes from offset 4 (skip 4-byte attribute header) - single dd call
+            raw_data=$(dd if="${osind_file}" bs=1 skip=4 count=8 2>/dev/null | od -An -tx1)
+            raw_bytes=$(echo "${raw_data}" | tr -d ' \n')
+            log "DEBUG: dd raw bytes (8 bytes from offset 4): ${raw_bytes}"
+
+            # extract first byte and convert to decimal (portable)
+            first_byte=$(echo "${raw_data}" | awk '{print $1}' | tr -d ' ')
+            if [ -n "${first_byte}" ]
+            then
+                # use bash arithmetic for hex to decimal conversion (portable)
+                value=$((0x${first_byte}))
+                log "DEBUG: dd parsed value: ${value} (0x$(printf '%02x' ${value}))"
+            fi
         fi
+    fi
 
-        mkdir -p "$(dirname "$cap_dst")"
-        cp -f "${cap_src}" "${cap_dst}"
-        sync
-
-        if command -v oe4t-set-uefi-OSIndications >/dev/null 2>&1
+    # verify the value
+    if [ -n "${value}" ]
+    then
+        # check if bit 2 is set (value & 0x04 == 0x04)
+        if [ "$((value & 4))" -eq 4 ]
         then
-            oe4t-set-uefi-OSIndications
-            log "staged capsule to ESP OK; OSIndications set"
+            log "OSIndications verified (0x$(printf '%02x' ${value}))"
         else
-            log "ERROR: oe4t-set-uefi-OSIndications not found, capsule may not be processed"
-            umount "${mount_dir}" || true
+            log "ERROR: OSIndications not set correctly (got 0x$(printf '%02x' ${value}), expected bit 2 set)"
             exit 1
         fi
     else
-        log "no bootloader update requested, skipping capsule"
+        log "WARN: Cannot verify OSIndications, file not readable"
+        log "OSIndications set (not verified)"
     fi
-
-    umount "${mount_dir}" || true
 }
 
-# Comment out the next line if you never update the bootloader via capsule
-maybe_stage_capsule
+stage_capsule() {
+    mount_dir="${1}"
+    esp_dir=""
+
+    log "staging UEFI capsule for bootloader update"
+
+    # Save current bootloader version for post-reboot verification
+    if command -v nvbootctrl >/dev/null 2>&1; then
+        current_bl_version=$(nvbootctrl dump-slots-info 2>/dev/null | grep -i "Current version" | awk '{print $3}')
+        if [ -n "${current_bl_version}" ]; then
+            log "current bootloader version: ${current_bl_version}"
+            mkdir -p /var/lib/mender
+            echo "${current_bl_version}" > /var/lib/mender/tegra-bl-version-before
+            log "saved version for post-reboot verification"
+        else
+            log "WARN: could not determine current bootloader version"
+        fi
+    fi
+
+    # Detect ESP mount point (/boot/efi is standard; otherwise try to mount it)
+    if findmnt -no TARGET /boot/efi >/dev/null 2>&1; then
+        esp_dir="/boot/efi"
+    else
+        # Try common ESP by-partlabel
+        if [ -e /dev/disk/by-partlabel/UEFI-ESP ]
+        then
+            mkdir -p /boot/efi
+            if ! mount /dev/disk/by-partlabel/UEFI-ESP /boot/efi
+            then
+                log "ERROR: failed to mount ESP; cannot stage capsule"
+                exit 1
+            fi
+            esp_dir="/boot/efi"
+        else
+            log "ERROR: ESP not mounted and /dev/disk/by-partlabel/UEFI-ESP missing"
+            exit 1
+        fi
+    fi
+
+    # Verify capsule file exists
+    cap_src="${mount_dir}/opt/nvidia/UpdateCapsule/tegra-bl.cap"
+    cap_dst="${esp_dir}/EFI/UpdateCapsule/TEGRA_BL.Cap"
+
+    if [ ! -f "${cap_src}" ]
+    then
+        log "ERROR: BL update requested but capsule not found (${cap_src})"
+        exit 1
+    fi
+
+    # Stage the capsule to ESP
+    mkdir -p "$(dirname "${cap_dst}")"
+    cp -f "${cap_src}" "${cap_dst}"
+    sync
+
+    # Set OSIndications UEFI variable to trigger capsule processing
+    if ! oe4t-set-uefi-OSIndications
+    then
+        log "ERROR: Failed to set OSIndications variable"
+        exit 1
+    fi
+
+    log "staged capsule to ESP OK"
+}
+
+# Boot Chain Switching Strategy
+#
+# NVIDIA's boot chain architecture links bootloader firmware and rootfs slots:
+#   Boot Chain 0 → Bootloader Chain 0 + Rootfs Slot 0 (partition 1)
+#   Boot Chain 1 → Bootloader Chain 1 + Rootfs Slot 1 (partition 2)
+#
+# Two update scenarios:
+#
+# 1. CAPSULE UPDATE (Rootfs + Bootloader):
+#    - UEFI capsule writes bootloader firmware to inactive boot chain
+#    - Capsule calls UpdateFwChain() to switch BCT to new chain
+#    - L4TLauncher reads new boot chain and boots corresponding rootfs slot
+#    - ATOMIC: Bootloader and rootfs switch together
+#    - NO nvbootctrl call needed (would cause BC_NEXT conflict)
+#
+# 2. ROOTFS-ONLY UPDATE:
+#    - Only rootfs partition updated, bootloader unchanged
+#    - Must call nvbootctrl to switch boot chain manually
+#    - HandleBootChainUpdate() processes BC_NEXT and updates BCT
+#    - System reboots to new boot chain with new rootfs
+
+# Check for bootloader update marker and handle accordingly
+marker_rel="/var/lib/wendyos/update-bootloader"
+
+if check_bootloader_marker "${marker_rel}" "${mount_dir}"
+then
+    log "bootloader update marker found: will stage capsule"
+    log "CAPSULE UPDATE: boot chain switch will be handled by UEFI firmware"
+    log "NOT calling nvbootctrl (would cause BC_NEXT conflict)"
+    stage_capsule "${mount_dir}"
+    verify_osindications
+else
+    log "ROOTFS-ONLY UPDATE: manually switching boot chain"
+    nvbootctrl -t rootfs set-active-boot-slot "${next}"
+    log "set active boot slot: ${next} OK"
+fi
 
 exit 0

@@ -11,6 +11,32 @@ make setup              # First-time setup (~10 min)
 make build              # Build the image (~2-4 hours first time, uses cache after)
 make flash-to-external  # Flash to external NVMe/USB drive
 ```
+## Table of Contents
+
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Directory Structure Requirements](#directory-structure-requirements)
+  - [Steps to Build](#steps-to-build)
+  - [Flash the SD Card or NVMe](#flash-the-sd-card-or-nvme)
+    - [For eMMC/SD Card Builds](#for-emmcsd-card-builds)
+    - [For NVMe Builds](#for-nvme-builds)
+    - [Flashing the .img File](#flashing-the-img-file)
+    - [Alternative: Flashing with initrd-flash (USB Recovery Mode)](#alternative-flashing-with-initrd-flash-usb-recovery-mode)
+  - [Available Images](#available-images)
+- [Mender OTA Updates](#mender-ota-updates)
+  - [Partition Layout](#partition-layout)
+  - [Manual Update](#manual-update)
+  - [Mender Server Update](#mender-server-update)
+    - [Setting Up Mender Server](#setting-up-mender-server)
+    - [Device Configuration](#device-configuration)
+    - [Deploy an Update](#deploy-an-update)
+    - [Mender Configuration](#mender-configuration)
+    - [Tear Down Server](#tear-down-server)
+- [Advanced Configuration](#advanced-configuration)
+  - [Custom Variables in bootstrap.sh](#custom-variables-in-bootstrapsh)
+  - [Build Configuration Variables](#build-configuration-variables)
+- [Architecture Notes](#architecture-notes)
+- [License](#license)
 
 ## Quick Start
 
@@ -131,9 +157,9 @@ make build MACHINE=jetson-orin-nano-devkit-edgeos
    - `DL_DIR` - Download directory for source tarballs (recommended for caching)
    - `SSTATE_DIR` - Shared state cache directory (speeds up rebuilds)
    - `MACHINE` - Target machine configuration:
-     - `jetson-orin-nano-devkit-nvme-edgeos` (NVMe boot) [**default**]
-     - `jetson-orin-nano-devkit-edgeos` (eMMC/SD card boot)
-   - `EDGEOS_FLASH_IMAGE_SIZE` - Flash image size: "64GB"):
+     - `jetson-orin-nano-devkit-nvme-wendyos` (NVMe boot) [**default**]
+     - `jetson-orin-nano-devkit-wendyos` (eMMC/SD card boot)
+   - `WENDYOS_FLASH_IMAGE_SIZE` - Flash image size: "64GB"):
      - `"4GB"` - 3.2GB Mender storage (~1.3GB per rootfs partition)
      - `"8GB"` - 6.4GB Mender storage (~2.9GB per rootfs partition)
      - `"16GB"` - 12.8GB Mender storage (~6GB per rootfs partition)
@@ -152,7 +178,7 @@ make build MACHINE=jetson-orin-nano-devkit-edgeos
    # build the Linux image inside the container
    cd ./wendyos
    . ./repos/poky/oe-init-build-env build
-   bitbake edgeos-image
+   bitbake wendyos-image
    ```
 
    Depending on the hardware configuration, the build process can take several hours on the first run (when the `download` and `sstate-cache` folders are empty!).
@@ -161,12 +187,12 @@ make build MACHINE=jetson-orin-nano-devkit-edgeos
 
 The build produces a flash package at:
 ```
-build/tmp/deploy/images/<machine>/edgeos-image-<machine>.rootfs.tegraflash.tar.gz
+build/tmp/deploy/images/<machine>/wendyos-image-<machine>.rootfs.tegraflash.tar.gz
 ```
 
 **Important**: The flashing script differs based on your target machine:
-- **NVMe** (`jetson-orin-nano-devkit-nvme-edgeos`) → use `doexternal.sh`
-- **eMMC/SD card** (`jetson-orin-nano-devkit-edgeos`) → use `dosdcard.sh`
+- **NVMe** (`jetson-orin-nano-devkit-nvme-wendyos`) → use `doexternal.sh`
+- **eMMC/SD card** (`jetson-orin-nano-devkit-wendyos`) → use `dosdcard.sh`
 
 #### For eMMC/SD Card Builds
 
@@ -175,7 +201,7 @@ build/tmp/deploy/images/<machine>/edgeos-image-<machine>.rootfs.tegraflash.tar.g
 ```bash
 cd /path/to/project
 mkdir ./deploy
-tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-edgeos/edgeos-image-*.tegraflash.tar.gz -C ./deploy
+tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-wendyos/wendyos-image-*.tegraflash.tar.gz -C ./deploy
 cd ./deploy
 sudo ./dosdcard.sh /dev/sdX
 ```
@@ -189,7 +215,7 @@ Replace `/dev/sdX` with the actual SD card device (e.g., `/dev/sdb`).
 ```bash
 cd /path/to/project
 mkdir ./deploy
-tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-edgeos/edgeos-image-*.tegraflash.tar.gz -C ./deploy
+tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-wendyos/wendyos-image-*.tegraflash.tar.gz -C ./deploy
 cd ./deploy
 sudo ./dosdcard.sh wendyos.img
 ```
@@ -203,7 +229,7 @@ This creates `wendyos.img`, which you can flash using dd or GUI tools (see below
 ```bash
 cd /path/to/project
 mkdir ./deploy
-tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-nvme-edgeos/edgeos-image-*.tegraflash.tar.gz -C ./deploy
+tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-nvme-wendyos/wendyos-image-*.tegraflash.tar.gz -C ./deploy
 cd ./deploy
 sudo ./doexternal.sh /dev/nvme0n1
 ```
@@ -217,17 +243,17 @@ Replace `/dev/nvme0n1` with your actual NVMe device path.
 ```bash
 cd /path/to/project
 mkdir ./deploy
-tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-nvme-edgeos/edgeos-image-*.tegraflash.tar.gz -C ./deploy
+tar -xzf ./build/tmp/deploy/images/jetson-orin-nano-devkit-nvme-wendyos/wendyos-image-*.tegraflash.tar.gz -C ./deploy
 cd ./deploy
 sudo ./doexternal.sh -s 64G wendyos-nvme.img
 ```
 
-**Important**: You **must** specify the size with `-s` parameter, and it **must match** your `EDGEOS_FLASH_IMAGE_SIZE` setting in `build/conf/local.conf`:
-- `-s 4G` for `EDGEOS_FLASH_IMAGE_SIZE = "4GB"`
-- `-s 8G` for `EDGEOS_FLASH_IMAGE_SIZE = "8GB"`
-- `-s 16G` for `EDGEOS_FLASH_IMAGE_SIZE = "16GB"`
-- `-s 32G` for `EDGEOS_FLASH_IMAGE_SIZE = "32GB"`
-- `-s 64G` for `EDGEOS_FLASH_IMAGE_SIZE = "64GB"`
+**Important**: You **must** specify the size with `-s` parameter, and it **must match** your `WENDYOS_FLASH_IMAGE_SIZE` setting in `build/conf/local.conf`:
+- `-s 4G` for `WENDYOS_FLASH_IMAGE_SIZE = "4GB"`
+- `-s 8G` for `WENDYOS_FLASH_IMAGE_SIZE = "8GB"`
+- `-s 16G` for `WENDYOS_FLASH_IMAGE_SIZE = "16GB"`
+- `-s 32G` for `WENDYOS_FLASH_IMAGE_SIZE = "32GB"`
+- `-s 64G` for `WENDYOS_FLASH_IMAGE_SIZE = "64GB"`
 
 **Warning**: Using a mismatched size will result in a corrupted or non-bootable image!
 
@@ -250,6 +276,198 @@ sync
 - balenaEtcher (recommended)
 - Raspberry Pi Imager
 - GNOME Disks
+
+### Alternative: Flashing with initrd-flash (USB Recovery Mode)
+
+The `initrd-flash` method is an alternative USB-based flashing approach provided by NVIDIA. Use this method when:
+
+- **Your device is bricked or won't boot** (recovery/unbrick method)
+- You want to flash internal storage (NVMe/eMMC) over USB
+- You need to flash a device without removing the storage
+- You're setting up devices for the first time
+- Standard `doexternal.sh` doesn't work for your setup
+- You need NVIDIA's official recovery mode flashing
+
+**When NOT to use initrd-flash:**
+- You already have WendyOS installed (use Mender OTA updates instead)
+- You're flashing external SD cards (use `dosdcard.sh` instead)
+- You need to create portable .img files (use `doexternal.sh -s` or `dosdcard.sh` instead)
+
+#### Prerequisites
+
+- NVIDIA Jetson Orin Nano Developer Kit
+- USB-C cable (for recovery mode connection)
+- Host PC running Linux (Ubuntu 20.04+ recommended), MacOS
+- Device in recovery mode
+
+#### Recovery from Bricked Device
+
+If your device won't boot (corrupted bootloader, failed update, etc.), the `initrd-flash` method is your **recovery tool**. Recovery mode bypasses the internal storage and boots a minimal system from USB, allowing you to reflash the device completely.
+
+**Signs your device is bricked:**
+- Device powers on but shows no output (no UART, no display, no network)
+- Bootloader corruption from failed update
+- Partition table corruption
+- Repeated boot loops
+- Device won't respond to any boot attempts
+
+In these cases, `initrd-flash` is often the **only way** to recover the device without replacing hardware.
+
+#### Steps to Flash with initrd-flash
+
+**1. Unpack the Flash Package**
+
+```bash
+cd /path/to/project
+mkdir -p ./deploy
+cd ./deploy
+
+# Extract the tegraflash package
+tar -xzf ../build/tmp/deploy/images/jetson-orin-nano-devkit-nvme-wendyos/wendyos-image-jetson-orin-nano-devkit-nvme-wendyos.tegraflash.tar.gz
+
+# Verify the initrd-flash script exists
+ls -la initrd-flash.sh
+```
+
+**2. Put Device in Recovery Mode**
+
+The Jetson Orin Nano Developer Kit does **not** have a physical Force Recovery button. You must short pins on the button header:
+
+- Power off the Jetson device completely
+- Connect the USB-C port (next to the power jack) to your host PC
+- Locate the button header on the carrier board (typically near the GPIO header)
+  - This is a single row of pins (not a 2-column header)
+  - Look for pins labeled **FC REC (Force Recovery)** [9] and **GND (Ground)** [10]
+  - These pins are usually adjacent to each other on the header
+- Short the FC REC and GND pins using a jumper wire or tweezers
+  - You need a connection between Force Recovery and Ground
+- While keeping the pins shorted, press the **Power button** or plug in power
+- Wait a couple of seconds, then remove the short
+- The device should now be in recovery mode
+
+**Note**: Consult your carrier board documentation or silkscreen labels to identify the exact Force Recovery and Ground pin locations.
+
+**3. Verify Recovery Mode**
+
+On your host PC, verify the device is detected:
+
+```bash
+lsusb | grep -i nvidia
+# Should show: "NVIDIA Corp. APX"
+```
+
+If not detected:
+- Try a different USB cable (must support data transfer)
+- Try a different USB port on your PC
+- Verify you shorted the correct pins (FC REC and GND)
+- Ensure the short was maintained during power-on
+- Check the carrier board silkscreen or documentation for pin labels
+- Try shorting the pins again and power cycling
+- Check that your user is in the `dialout` group: `sudo usermod -aG dialout $USER`
+
+**Tip**: The button header pins are typically labeled on the carrier board silkscreen. Look for "FC REC" or "RECOVERY" and "GND" markings next to the pins.
+
+**4. Run the initrd-flash Script**
+
+```bash
+cd /path/to/project/deploy
+
+# Run the flash script (no arguments needed - config is in .env.initrd-flash)
+sudo ./initrd-flash.sh
+
+# Optional: Skip bootloader flashing (rootfs only)
+# sudo ./initrd-flash.sh --skip-bootloader
+
+# Optional: Erase NVMe before flashing
+# sudo ./initrd-flash.sh --erase-nvme
+```
+
+**Note:** The script reads configuration from `.env.initrd-flash` (created during build), which contains:
+- Machine type (jetson-orin-nano-devkit-nvme-wendyos or jetson-orin-nano-devkit-wendyos)
+- Target device (NVMe or eMMC)
+- Board IDs and other hardware parameters
+
+No command-line arguments are needed for machine/device - it's all pre-configured!
+
+Available Options:
+- `--skip-bootloader` - Skip boot partition programming (rootfs only)
+- `--erase-nvme` - Erase NVMe drive during flashing
+- `--usb-instance <instance>` - Specify USB instance (for multiple devices)
+- `-u <keyfile>` - PKC key file for signing
+- `-v <keyfile>` - SBK key file for signing
+- `-h` or `--help` - Display usage information
+
+**What Gets Flashed:**
+
+The `initrd-flash` script performs a complete system flash including all firmware and partitions.
+
+Firmware Components:
+- **UEFI Firmware** - `uefi_jetson.bin`, `uefi_jetson_minimal.bin`
+- **Boot Chain** - MB1 (`mb1_t234_prod.bin`), MB2 (`mb2_t234.bin`)
+- **PSC Firmware** - PSC BL1 (`psc_bl1_t234_prod.bin`), PSC FW (`pscfw_t234_prod.bin`)
+- **Additional Firmware** - 20+ components including SPE, MCE, BPMP, DCE, XUSB, etc.
+- **Trusted OS** - `tos-optee_t234.img`
+
+Storage Components:
+- **ESP (EFI System Partition)** - Contains UEFI boot files (`esp.img`)
+- **Kernel** and **Device Tree Blobs**
+- **Rootfs Partitions** - APP_a and APP_b (A/B redundancy for Mender)
+- **Partition Table** - GPT layout defined in flash XML
+
+Bootloader Location:
+- SPI Flash (device 3:0) **OR** eMMC boot partitions (device 0:3) - device-dependent
+- Rootfs written to NVMe (device 9:0) or eMMC user partition (device 1:3)
+
+Why This Matters:
+- **Fixes bootloader corruption** - Reflashes complete boot chain (MB1, MB2, PSC, UEFI)
+- **Updates bootloader versions** - Installs all firmware from the tegraflash package
+- **Recovers from failed firmware updates** - Replaces all boot components
+- **Resets partition layout** - Creates fresh GPT partition table
+- **Unbricks devices** - Works even when storage is completely corrupted
+
+Important Notes:
+- The script will upload a recovery kernel and initramfs to the device
+- The device will boot into the recovery system
+- Flashing will proceed automatically (takes ~5-15 minutes)
+- Do NOT disconnect USB or power during this process
+- **All data on the device will be erased** (bootloader, rootfs, data partition)
+
+**5. Monitor the Flash Process**
+
+The script will display progress:
+```
+*** Flashing target device started. ***
+Waiting for device to expose ssh ...
+SSH ready
+Flashing to mmcblk0p1 ...
+Writing bootloader ...
+Writing kernel ...
+Writing rootfs ...
+*** The target device has been flashed successfully. ***
+*** Reboot the target device ***
+```
+
+**6. Reboot the Device**
+
+After successful flashing:
+```bash
+# The device will automatically reboot, or you can manually power cycle it
+# Remove the USB cable
+# The device should boot into WendyOS
+```
+
+**7. Verify Boot**
+
+Connect via SSH (over USB or Ethernet):
+```bash
+# Find device IP (check DHCP, use .local name, or USB network)
+ssh wendy@wendy-<adjective>-<noun>.local
+# Default password: wendy
+
+# Verify system info
+cat /etc/os-release
+uname -a
+```
 
 ### Available Images
 
@@ -275,10 +493,56 @@ The system includes Mender for Over-The-Air updates with A/B partition redundanc
 - `/dev/nvme0n1p1` - Root filesystem A
 - `/dev/nvme0n1p2` - Root filesystem B
 - `/dev/nvme0n1p11` - Boot partition (shared)
-- `/dev/nvme0n1p15` - UDA partition (NVIDIA reserved, not used by EdgeOS)
+- `/dev/nvme0n1p15` - UDA partition (NVIDIA reserved, not used by wendyos)
 - `/dev/nvme0n1p17` - Mender data partition (expandable, mounted at `/data`)
 
-### Setting Up Mender Server
+### Manual Update
+
+For testing or offline updates, you can manually install a `.mender` artifact without a Mender server:
+
+**1. Transfer the artifact to the device:**
+
+```bash
+scp wendyos-image-*.mender root@<device-ip>:/tmp/
+```
+
+**2. Install the update:**
+
+```bash
+ssh root@<device-ip>
+sudo mender-update install /tmp/wendyos-image-*.mender
+```
+
+**3. Reboot to apply:**
+
+```bash
+sudo reboot
+```
+
+**4. Verify the update:**
+
+After reboot, check the new version:
+
+```bash
+cat /etc/os-release | grep VERSION_ID
+mender-update show-artifact
+```
+
+**5. Commit the update:**
+
+If the system boots successfully and you're satisfied with the new version:
+
+```bash
+sudo mender-update commit
+```
+
+**Note:** If you don't commit, Mender will automatically roll back to the previous version on the next reboot.
+
+### Mender Server Update
+
+For production deployments, use the Mender server for centralized OTA update management.
+
+#### Setting Up Mender Server
 
 #### 1. Install Dependencies
 
@@ -324,13 +588,13 @@ docker compose ps
 docker compose logs -f api-gateway deployments deviceauth
 ```
 
-### Device Configuration
+#### Device Configuration
 
 The Mender client on the Jetson device is pre-configured to connect to `https://docker.mender.io`. Ensure the `/etc/hosts` entry is set (see step 3 above).
 
 The server's TLS certificate is already included in the image at `/etc/mender/server.crt`.
 
-### Deploy an Update
+#### Deploy an Update
 
 1. Open https://docker.mender.io/ in your browser
 2. Log in with `admin@docker.mender.io` / `password123`
@@ -339,14 +603,14 @@ The server's TLS certificate is already included in the image at `/etc/mender/se
 5. Create a deployment under **Deployments → Create deployment**
 6. Monitor the update progress on the device
 
-### Mender Configuration
+#### Mender Configuration
 
 - **Server URL**: `https://docker.mender.io`
 - **Update poll interval**: 30 minutes
 - **Inventory poll interval**: 8 hours
 - **Artifact naming**: `${IMAGE_BASENAME}-${MACHINE}-${IMAGE_VERSION_SUFFIX}`
 
-### Tear Down Server
+#### Tear Down Server
 
 ```bash
 # Stop and remove containers + volumes (wipes all data)
@@ -356,23 +620,6 @@ docker compose down -v
 cd <server_dir>/..
 rm -rf mender-server
 ```
-
-#### Jetson
-
-```bash
-$ echo '<mender server IP> docker.mender.io s3.docker.mender.io' | sudo tee -a /etc/hosts
-```
-
-The server’s TLS cert for the client to trust (self-signed demo cert!) has to be already present on the device.
-
-#### Mender Web UI
-
-From any browser that resolves the same hostnames (the server should also have the hosts lines):
-- Open https://docker.mender.io/ (according to the demo configuration done on both, server and target)
-- Log in with the creaged user (e.g., admin@docker.mender.io / password123)
-- Go to Devices → Pending and Accept your Jetson
-- Upload a .mender artifact under Artifacts, then Deployments → Create deployment
-
 
 ## Advanced Configuration
 
@@ -386,13 +633,13 @@ You can modify these variables in `bootstrap.sh` before running:
 ### Build Configuration Variables
 
 In `build/conf/local.conf`:
-- `EDGEOS_FLASH_IMAGE_SIZE` - Flash image size: "4GB", "8GB", "16GB", "32GB", "64GB" (default: "8GB")
-- `EDGEOS_DEBUG` - Enable debug packages (default: 0)
-- `EDGEOS_DEBUG_UART` - Enable UART debug output (default: 0)
-- `EDGEOS_USB_GADGET` - Enable USB gadget mode (default: 0)
-- `EDGEOS_PERSIST_JOURNAL_LOGS` - Persist logs to storage (default: 0)
+- `WENDYOS_FLASH_IMAGE_SIZE` - Flash image size: "4GB", "8GB", "16GB", "32GB", "64GB" (default: "8GB")
+- `WENDYOS_DEBUG` - Enable debug packages (default: 0)
+- `WENDYOS_DEBUG_UART` - Enable UART debug output (default: 0)
+- `WENDYOS_USB_GADGET` - Enable USB gadget mode (default: 0)
+- `WENDYOS_PERSIST_JOURNAL_LOGS` - Persist logs to storage (default: 0)
 
-**Note**: Choose `EDGEOS_FLASH_IMAGE_SIZE` based on your target storage device capacity and expected rootfs size. Larger images provide more space for root filesystems and future updates.
+**Note**: Choose `WENDYOS_FLASH_IMAGE_SIZE` based on your target storage device capacity and expected rootfs size. Larger images provide more space for root filesystems and future updates.
 
 ## Architecture Notes
 
